@@ -485,9 +485,9 @@
                         <tr>
                             <th>Lote</th>
                             <th>Producto</th>
-                            <th>Piezas</th>
                             <th>Entrada</th>
                             <th>Caducidad</th>
+                            <th>T° Recepción</th>
                             <th>Uso</th>
                             <th>Baja</th>
                             <th>Editar</th>
@@ -553,12 +553,27 @@
             <h3>✏️ Editar reactivo</h3>
             <p>Modifica los datos del reactivo:</p>
             <form id="formEditar">
-                <input type="text" id="editProducto" placeholder="Producto" readonly style="background:#f1efe8;cursor:not-allowed;">
-                <input type="text" id="editFabricante" placeholder="Fabricante" readonly style="background:#f1efe8;cursor:not-allowed;">
-                <input type="text" id="editFechaCaducidad" placeholder="Fecha de caducidad">
-                <input type="text" id="editTemperatura" placeholder="Temperatura de recepción (Ej: 25°C)">
-                <input type="text" id="editRevision" placeholder="Revisión del inserto">
-                <input type="text" id="editFAD10" placeholder="FAD-10">
+                <label style="font-size:12px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.3rem;">Producto:</label>
+                <input type="text" id="editProducto" readonly style="background:#f1efe8;cursor:not-allowed;margin-bottom:1rem;">
+                
+                <label style="font-size:12px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.3rem;">Fabricante:</label>
+                <input type="text" id="editFabricante" readonly style="background:#f1efe8;cursor:not-allowed;margin-bottom:1rem;">
+                
+                <label style="font-size:12px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.3rem;">Fecha de entrada:</label>
+                <input type="text" id="editFechaEntrada" placeholder="Fecha de entrada" style="margin-bottom:1rem;">
+                
+                <label style="font-size:12px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.3rem;">Fecha de caducidad:</label>
+                <input type="text" id="editFechaCaducidad" placeholder="Fecha de caducidad (dd/mm/aaaa)" style="margin-bottom:1rem;">
+                
+                <label style="font-size:12px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.3rem;">Temperatura de recepción (Ej: 25°C):</label>
+                <input type="text" id="editTemperatura" style="margin-bottom:1rem;">
+                
+                <label style="font-size:12px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.3rem;">Revisión del inserto:</label>
+                <input type="text" id="editRevision" style="margin-bottom:1rem;">
+                
+                <label style="font-size:12px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.3rem;">FAD-10:</label>
+                <input type="text" id="editFAD10" style="margin-bottom:1rem;">
+                
                 <div class="modal-botones">
                     <button type="button" class="btn-desbloquear" onclick="guardarEdicion()">💾 Guardar</button>
                     <button type="button" class="btn-cancelar" id="btnCancelarEditar">Cancelar</button>
@@ -615,19 +630,18 @@
             
             reactivos.forEach(r => {
                 const tr = document.createElement('tr');
-                const entradaEstado = r.entrada.completado ? '<span class="estado-vigente">✅</span>' : '<span class="estado-pendiente">⏳</span>';
                 const usoEstado = r.uso.completado ? '<span class="estado-vigente">✅</span>' : '<span class="estado-pendiente">⏳</span>';
                 const bajaEstado = r.baja.completado ? '<span class="estado-vigente">✅</span>' : '<span class="estado-pendiente">⏳</span>';
                 
                 tr.innerHTML = `
                     <td><strong>${r.lote}</strong></td>
                     <td>${r.producto}</td>
-                    <td>${r.numeroPiezasTotal}</td>
-                    <td>${entradaEstado} ${r.entrada.fecha || ''}</td>
+                    <td><strong>${r.entrada.fecha || ''}</strong></td>
                     <td>${r.fechaCaducidad || '<span style="color:red">⚠️ Falta</span>'}</td>
+                    <td>${r.tempRecepcion || r.entrada.temp || '-'}</td>
                     <td>${usoEstado} ${r.uso.fecha || ''}</td>
                     <td>${bajaEstado} ${r.baja.fecha || ''}</td>
-                    <td><button class="btn-editar" onclick="editarReactivo('${r.id}')">✏️</button></td>
+                    <td><button class="btn-editar" onclick="editarReactivoConCheck('${r.id}')">✏️</button></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -766,7 +780,11 @@
             const pwd = document.getElementById('inputPassword').value;
             if (pwd === CONTRASEÑA) {
                 document.getElementById('modalPassword').classList.remove('activo');
-                abrirFormulario(passwordModalData.reactivo);
+                if (passwordModalData.modo === 'edicion') {
+                    abrirModalEdicion(passwordModalData.reactivo.id);
+                } else {
+                    abrirFormulario(passwordModalData.reactivo);
+                }
             } else {
                 alert('❌ Contraseña incorrecta');
                 document.getElementById('inputPassword').value = '';
@@ -786,12 +804,27 @@
         // ===== MODAL EDICIÓN =====
         let reactivoEnEdicion = null;
         
-        function editarReactivo(id) {
+        function editarReactivoConCheck(id) {
+            const reactivo = reactivos.find(r => r.id === id);
+            if (!reactivo) return;
+            
+            // Si está bloqueado, pedir contraseña
+            if (reactivo.entrada.bloqueado) {
+                passwordModalData = { reactivo: reactivo, modo: 'edicion' };
+                document.getElementById('modalPassword').classList.add('activo');
+                document.getElementById('inputPassword').focus();
+            } else {
+                abrirModalEdicion(id);
+            }
+        }
+        
+        function abrirModalEdicion(id) {
             reactivoEnEdicion = reactivos.find(r => r.id === id);
             if (!reactivoEnEdicion) return;
             
             document.getElementById('editProducto').value = reactivoEnEdicion.producto;
             document.getElementById('editFabricante').value = reactivoEnEdicion.fabricante;
+            document.getElementById('editFechaEntrada').value = reactivoEnEdicion.entrada.fecha || '';
             document.getElementById('editFechaCaducidad').value = reactivoEnEdicion.fechaCaducidad || '';
             document.getElementById('editTemperatura').value = reactivoEnEdicion.tempRecepcion || reactivoEnEdicion.entrada.temp || '';
             document.getElementById('editRevision').value = reactivoEnEdicion.entrada.revision || '';
@@ -802,6 +835,7 @@
         function guardarEdicion() {
             if (!reactivoEnEdicion) return;
             
+            reactivoEnEdicion.entrada.fecha = document.getElementById('editFechaEntrada').value;
             reactivoEnEdicion.fechaCaducidad = document.getElementById('editFechaCaducidad').value;
             reactivoEnEdicion.tempRecepcion = document.getElementById('editTemperatura').value;
             reactivoEnEdicion.entrada.temp = document.getElementById('editTemperatura').value;
