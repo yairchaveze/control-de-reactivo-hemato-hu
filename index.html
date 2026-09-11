@@ -454,7 +454,40 @@
     </style>
 </head>
 <body>
-    <div class="header">
+    <div class="modal" id="modalLogin" style="display:flex">
+        <div class="modal-contenido" style="min-width:400px;max-width:450px">
+            <div style="text-align:center;margin-bottom:1.5rem">
+                <img src="https://raw.githubusercontent.com/yairchaveze/control-de-reactivo-hemato-hu/main/inicio-logo01.png" alt="Logo" style="max-height:80px;margin-bottom:1rem;">
+                <h2 style="color:#0C447C;margin:0">Control de Reactivos</h2>
+                <p style="color:#5f5e5a;margin:0.5rem 0">Hospital Universitario</p>
+            </div>
+            
+            <form id="formLogin">
+                <label style="font-size:13px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.5rem;">Código de usuario:</label>
+                <input type="text" id="inputCodigoUsuario" placeholder="Ej: CHEAEST1" style="width:100%;padding:10px;margin-bottom:1rem;border:1px solid #888780;border-radius:6px;font-size:14px;" autofocus required>
+                
+                <label style="font-size:13px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.5rem;">Departamento:</label>
+                <select id="selectDepartamento" style="width:100%;padding:10px;margin-bottom:1.5rem;border:1px solid #888780;border-radius:6px;font-size:14px;" required>
+                    <option value="">Selecciona tu departamento...</option>
+                    <option value="Medicina Transfusional">Medicina Transfusional</option>
+                    <option value="Citometría">Citometría</option>
+                    <option value="Criopreservación">Criopreservación</option>
+                    <option value="Terapia Celular">Terapia Celular</option>
+                    <option value="Hematología Especial">Hematología Especial</option>
+                    <option value="Hematología">Hematología</option>
+                    <option value="Medicina Molecular Coagulación">Medicina Molecular Coagulación</option>
+                    <option value="Química Clínica">Química Clínica</option>
+                    <option value="Inmunología">Inmunología</option>
+                </select>
+                
+                <button type="submit" class="btn-desbloquear" style="width:100%;padding:12px;border:none;border-radius:6px;background:#0C447C;color:white;font-weight:500;cursor:pointer;">🔐 Ingresar</button>
+            </form>
+            
+            <p style="font-size:12px;color:#888780;text-align:center;margin-top:1rem">
+                Acceso restringido a personal autorizado
+            </p>
+        </div>
+    </div>
         <div class="header-logos">
             <img src="https://raw.githubusercontent.com/yairchaveze/control-de-reactivo-hemato-hu/main/inicio-logo01.png" alt="UANL - HU - Hematología" class="logo-banner">
         </div>
@@ -470,6 +503,7 @@
             <h2>Modo de operación</h2>
             <div class="botones">
                 <button class="btn activo" id="btnEntrada">📥 Entrada</button>
+                <button class="btn" id="btnUso">⚙️ Uso</button>
                 <button class="btn" id="btnBaja">🗑️ Baja</button>
             </div>
         </div>
@@ -524,6 +558,7 @@
                             <th>Entrada</th>
                             <th>Caducidad</th>
                             <th>T° Recepción</th>
+                            <th>Uso</th>
                             <th>Verificación</th>
                             <th>Baja</th>
                             <th>Editar</th>
@@ -669,6 +704,8 @@
         let reactivoPendienteBaja = null;
         let anoSeleccionado = null;
         let productoSeleccionado = null;
+        let usuarioActual = null;
+        let departamentoActual = null;
 
         function cargarDatos() {
             const guardados = localStorage.getItem('reactivos_lab');
@@ -680,12 +717,71 @@
                     reactivos = [];
                 }
             }
+            
+            // Filtrar por departamento
+            reactivos = reactivos.filter(r => r.departamento === departamentoActual);
+            
             actualizarTabla();
         }
 
         function guardarDatos() {
             localStorage.setItem('reactivos_lab', JSON.stringify(reactivos));
         }
+        
+        // ===== LOGIN =====
+        document.getElementById('formLogin').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const codigo = document.getElementById('inputCodigoUsuario').value.trim();
+            const departamento = document.getElementById('selectDepartamento').value;
+            
+            if (!codigo || !departamento) {
+                alert('Por favor completa todos los campos');
+                return;
+            }
+            
+            usuarioActual = codigo;
+            departamentoActual = departamento;
+            
+            localStorage.setItem('usuario_lab', JSON.stringify({
+                codigo: codigo,
+                departamento: departamento,
+                fechaLogin: new Date().toLocaleString('es-MX')
+            }));
+            
+            // Ocultar login y mostrar app
+            document.getElementById('modalLogin').style.display = 'none';
+            document.getElementById('codigoInput').focus();
+            
+            cargarDatos();
+            actualizarEncabezado();
+        });
+        
+        function actualizarEncabezado() {
+            const headerTexto = document.querySelector('.header-texto');
+            if (headerTexto) {
+                const p = document.createElement('p');
+                p.style.cssText = 'font-size:11px;color:#888780;margin:0.5rem 0;padding-top:0.5rem;border-top:1px solid #d3d1c7';
+                p.textContent = '👤 ' + usuarioActual + ' | 🏥 ' + departamentoActual;
+                headerTexto.appendChild(p);
+            }
+        }
+        
+        // Verificar si ya hay sesión
+        window.addEventListener('load', () => {
+            const sesionGuardada = localStorage.getItem('usuario_lab');
+            if (sesionGuardada) {
+                try {
+                    const sesion = JSON.parse(sesionGuardada);
+                    usuarioActual = sesion.codigo;
+                    departamentoActual = sesion.departamento;
+                    document.getElementById('modalLogin').style.display = 'none';
+                    cargarDatos();
+                    actualizarEncabezado();
+                } catch (e) {
+                    localStorage.removeItem('usuario_lab');
+                }
+            }
+        });
 
         function actualizarTabla() {
             const tbody = document.getElementById('cuerpoTabla');
@@ -749,7 +845,7 @@
             // Mostrar tabla vacía
             if (reactivosDelProducto.length === 0) {
                 const tr = document.createElement('tr');
-                tr.innerHTML = '<td colspan="8" style="text-align: center; color: #5f5e5a; padding: 2rem;">Sin reactivos registrados</td>';
+                tr.innerHTML = '<td colspan="9" style="text-align: center; color: #5f5e5a; padding: 2rem;">Sin reactivos registrados</td>';
                 tbody.appendChild(tr);
                 return;
             }
@@ -757,6 +853,7 @@
             // Llenar tabla
             reactivosDelProducto.forEach(r => {
                 const tr = document.createElement('tr');
+                const usoEstado = r.uso.completado ? '<span class="estado-vigente">✅</span>' : '<span class="estado-pendiente">⏳</span>';
                 const bajaEstado = r.baja.completado ? '<span class="estado-vigente">✅</span>' : '<span class="estado-pendiente">⏳</span>';
                 
                 tr.innerHTML = `
@@ -765,6 +862,7 @@
                     <td><strong>${r.entrada.fecha || ''}</strong></td>
                     <td>${r.fechaCaducidad || '<span style="color:red">⚠️ Falta</span>'}</td>
                     <td>${r.tempRecepcion || r.entrada.temp || '-'}</td>
+                    <td>${usoEstado} ${r.uso.fecha || ''}</td>
                     <td>${r.baja.verificacion || '-'}</td>
                     <td>${bajaEstado} ${r.baja.fecha || ''}</td>
                     <td><button class="btn-editar" onclick="editarReactivoConCheck('${r.id}')">✏️</button></td>
@@ -786,13 +884,15 @@
 
         function cambiarModo(nuevoModo) {
             modo = nuevoModo;
-            document.querySelectorAll('#btnEntrada, #btnBaja').forEach(b => b.classList.remove('activo'));
+            document.querySelectorAll('#btnEntrada, #btnUso, #btnBaja').forEach(b => b.classList.remove('activo'));
             if (nuevoModo === 'entrada') document.getElementById('btnEntrada').classList.add('activo');
+            else if (nuevoModo === 'uso') document.getElementById('btnUso').classList.add('activo');
             else if (nuevoModo === 'baja') document.getElementById('btnBaja').classList.add('activo');
             document.getElementById('codigoInput').focus();
         }
 
         document.getElementById('btnEntrada').addEventListener('click', () => cambiarModo('entrada'));
+        document.getElementById('btnUso').addEventListener('click', () => cambiarModo('uso'));
         document.getElementById('btnBaja').addEventListener('click', () => cambiarModo('baja'));
 
         document.getElementById('codigoInput').addEventListener('keypress', (e) => {
@@ -846,7 +946,16 @@
         }
 
         function abrirFormulario(reactivo) {
-            if (modo === 'baja') {
+            if (modo === 'uso') {
+                actualizarReactivo(reactivo.id, 'uso', {
+                    completado: true,
+                    bloqueado: true,
+                    fecha: new Date().toLocaleDateString('es-MX')
+                });
+                alert('✅ Uso registrado correctamente');
+                document.getElementById('codigoInput').value = '';
+                document.getElementById('codigoInput').focus();
+            } else if (modo === 'baja') {
                 reactivoPendienteBaja = reactivo;
                 document.getElementById('modalSeleccionarVerificacion').classList.add('activo');
             }
@@ -903,7 +1012,9 @@
                     fechaCaducidad: form.get('fechaCaducidad'),
                     numeroPieza: i,
                     numeroPiezasTotal: numeroPiezas,
+                    departamento: departamentoActual,
                     entrada: { completado: true, bloqueado: true, fecha: new Date().toLocaleDateString('es-MX'), temp: form.get('tempRecepcion') || '', revision: null, fad10: null },
+                    uso: { completado: false, bloqueado: false, fecha: null },
                     baja: { completado: false, bloqueado: false, fecha: null, verificacion: null }
                 };
                 reactivos.push(nuevoReactivo);
@@ -1109,9 +1220,9 @@
         }
 
         document.getElementById('btnExportar').addEventListener('click', () => {
-            let csv = 'FECHA RECEPCIÓN,No. DE LOTE,FECHA CADUCIDAD,T° RECEPCIÓN,REVISIÓN INSERTO,FAD-10,VERIFICACIÓN,FECHA BAJA\n';
+            let csv = 'FECHA RECEPCIÓN,No. DE LOTE,FECHA CADUCIDAD,T° RECEPCIÓN,REVISIÓN INSERTO,FAD-10,FECHA PUESTA EN USO,VERIFICACIÓN,FECHA BAJA\n';
             reactivos.forEach(r => {
-                csv += '"' + (r.entrada.fecha || '') + '","' + r.lote + '","' + (r.fechaCaducidad || '') + '","' + (r.entrada.temp || '') + '","' + (r.entrada.revision || '') + '","' + (r.entrada.fad10 || '') + '","' + (r.baja.verificacion || '') + '","' + (r.baja.fecha || '') + '"\n';
+                csv += '"' + (r.entrada.fecha || '') + '","' + r.lote + '","' + (r.fechaCaducidad || '') + '","' + (r.entrada.temp || '') + '","' + (r.entrada.revision || '') + '","' + (r.entrada.fad10 || '') + '","' + (r.uso.fecha || '') + '","' + (r.baja.verificacion || '') + '","' + (r.baja.fecha || '') + '"\n';
             });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
@@ -1168,11 +1279,11 @@
             
             html += '<table>';
             html += '<thead><tr>';
-            html += '<th>FECHA RECEPCIÓN</th><th>No. LOTE</th><th>FECHA CADUCIDAD</th><th>T° RECEPCIÓN</th><th>REVISIÓN</th><th>FAD-10</th><th>VERIFICACIÓN</th><th>FECHA BAJA</th>';
+            html += '<th>FECHA RECEPCIÓN</th><th>No. LOTE</th><th>FECHA CADUCIDAD</th><th>T° RECEPCIÓN</th><th>REVISIÓN</th><th>FAD-10</th><th>FECHA USO</th><th>VERIFICACIÓN</th><th>FECHA BAJA</th>';
             html += '</tr></thead><tbody>';
             
             if (reactivosAImprimir.length === 0) {
-                html += '<tr><td colspan="8" style="text-align:center;color:#888780">Sin reactivos registrados para esta selección</td></tr>';
+                html += '<tr><td colspan="9" style="text-align:center;color:#888780">Sin reactivos registrados para esta selección</td></tr>';
             } else {
                 reactivosAImprimir.forEach(r => {
                     html += '<tr>';
@@ -1182,6 +1293,7 @@
                     html += '<td>' + (r.tempRecepcion || r.entrada.temp || '') + '</td>';
                     html += '<td>' + (r.entrada.revision || '') + '</td>';
                     html += '<td>' + (r.entrada.fad10 || '') + '</td>';
+                    html += '<td>' + (r.uso.fecha || '') + '</td>';
                     html += '<td>' + (r.baja.verificacion || '') + '</td>';
                     html += '<td>' + (r.baja.fecha || '') + '</td>';
                     html += '</tr>';
