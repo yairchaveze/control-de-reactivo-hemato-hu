@@ -21,10 +21,10 @@
             background: white;
             border-bottom: 2px solid #0C447C;
             padding: 1.5rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             display: flex;
             gap: 2rem;
             align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
         
         .header-logos {
@@ -463,8 +463,11 @@
             </div>
             
             <form id="formLogin">
-                <label style="font-size:13px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.5rem;">Código de usuario:</label>
-                <input type="text" id="inputCodigoUsuario" placeholder="Ej: CHEAEST1" style="width:100%;padding:10px;margin-bottom:1rem;border:1px solid #888780;border-radius:6px;font-size:14px;" autofocus required>
+                <label style="font-size:13px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.5rem;">Usuario:</label>
+                <input type="text" id="inputUsuario" placeholder="Ej: CHAEST" style="width:100%;padding:10px;margin-bottom:1rem;border:1px solid #888780;border-radius:6px;font-size:14px;" autofocus required>
+                
+                <label style="font-size:13px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.5rem;">Contraseña:</label>
+                <input type="password" id="inputPassword" placeholder="Contraseña" style="width:100%;padding:10px;margin-bottom:1rem;border:1px solid #888780;border-radius:6px;font-size:14px;" required>
                 
                 <label style="font-size:13px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.5rem;">Departamento:</label>
                 <select id="selectDepartamento" style="width:100%;padding:10px;margin-bottom:1.5rem;border:1px solid #888780;border-radius:6px;font-size:14px;" required>
@@ -481,6 +484,8 @@
                 </select>
                 
                 <button type="submit" class="btn-desbloquear" style="width:100%;padding:12px;border:none;border-radius:6px;background:#0C447C;color:white;font-weight:500;cursor:pointer;">🔐 Ingresar</button>
+                
+                <div id="mensajeErrorLogin" style="display:none;margin-top:1rem;padding:0.8rem;background:#fcebeb;border:1px solid #f7c1c1;border-radius:6px;color:#dc3545;font-size:13px;text-align:center;"></div>
             </form>
             
             <p style="font-size:12px;color:#888780;text-align:center;margin-top:1rem">
@@ -488,6 +493,7 @@
             </p>
         </div>
     </div>
+    <div class="header">
         <div class="header-logos">
             <img src="https://raw.githubusercontent.com/yairchaveze/control-de-reactivo-hemato-hu/main/inicio-logo01.png" alt="UANL - HU - Hematología" class="logo-banner">
         </div>
@@ -495,6 +501,9 @@
             <h1>Control de Reactivos y Consumibles</h1>
             <p>Servicio de Hematología</p>
             <p class="institucion">Hospital Universitario "Dr. José Eleuterio González"</p>
+        </div>
+        <div style="text-align:right;padding-left:2rem;display:flex;align-items:center">
+            <button id="btnSalir" class="btn" style="background:#dc3545;color:white;padding:8px 12px;border:none;cursor:pointer;font-size:13px;font-weight:500;height:fit-content">🚪 Salir</button>
         </div>
     </div>
 
@@ -559,7 +568,8 @@
                             <th>Caducidad</th>
                             <th>T° Recepción</th>
                             <th>Uso</th>
-                            <th>Verificación</th>
+                            <th>Revisión Uso</th>
+                            <th>Verificación Uso</th>
                             <th>Baja</th>
                             <th>Editar</th>
                         </tr>
@@ -597,7 +607,8 @@
                 <input type="text" name="tempAlmacenaje" placeholder="Temperatura almacenaje (Ej: 15-30°C)">
                 <input type="text" name="tempRecepcion" placeholder="Temperatura de recepción (Ej: 25°C)">
                 <input type="text" name="docExterno" placeholder="Documento externo">
-                <input type="date" name="fechaCaducidad" placeholder="Fecha de caducidad" required>
+                <input type="text" name="fad10" placeholder="FAD-10">
+                <input type="date" name="fechaCaducidad" placeholder="Fecha de caducidad" required title="Fecha de caducidad">
                 <input type="number" name="numeroPiezas" placeholder="Número de piezas recibidas" min="1" value="1" required>
                 <div class="modal-botones">
                     <button type="submit" class="btn-crear">Crear</button>
@@ -621,13 +632,13 @@
 
     <div class="modal" id="modalSeleccionarVerificacion">
         <div class="modal-contenido">
-            <h3>📋 Tipo de verificación</h3>
-            <p>¿Qué tipo de verificación realizas al dar de baja?</p>
+            <h3>📋 Tipo de verificación (Uso)</h3>
+            <p>¿Qué tipo de verificación realizas al usar?</p>
             <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.5rem;">
-                <button type="button" class="btn-desbloquear" onclick="procesarBaja('Visual OK')" style="background:#185FA5;padding:12px;border:none;border-radius:6px;color:white;cursor:pointer;font-weight:500;transition:background 0.2s;" onmouseover="this.style.background='#0C447C'" onmouseout="this.style.background='#185FA5'">
+                <button type="button" class="btn-desbloquear" onclick="procesarUso('Visual OK')" style="background:#185FA5;padding:12px;border:none;border-radius:6px;color:white;cursor:pointer;font-weight:500;transition:background 0.2s;" onmouseover="this.style.background='#0C447C'" onmouseout="this.style.background='#185FA5'">
                     👁️ Visual OK
                 </button>
-                <button type="button" class="btn-desbloquear" onclick="procesarBaja('Por desempeño (control de reactivo)')" style="background:#185FA5;padding:12px;border:none;border-radius:6px;color:white;cursor:pointer;font-weight:500;transition:background 0.2s;" onmouseover="this.style.background='#0C447C'" onmouseout="this.style.background='#185FA5'">
+                <button type="button" class="btn-desbloquear" onclick="procesarUso('Por desempeño (control de reactivo)')" style="background:#185FA5;padding:12px;border:none;border-radius:6px;color:white;cursor:pointer;font-weight:500;transition:background 0.2s;" onmouseover="this.style.background='#0C447C'" onmouseout="this.style.background='#185FA5'">
                     🔬 Por desempeño (control de reactivo)
                 </button>
             </div>
@@ -675,9 +686,14 @@
                 <label style="font-size:12px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.3rem;">FAD-10:</label>
                 <input type="text" id="editFAD10" style="margin-bottom:1rem;">
                 
+                <label style="font-size:12px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.3rem;">Revisión del inserto (Uso):</label>
+                <input type="text" id="editRevisionUso" style="margin-bottom:1rem;">
+                
+                <label style="font-size:12px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.3rem;">Verificación del uso:</label>
+                <input type="text" id="editVerificacionUso" style="margin-bottom:1rem;">
+                
                 <div id="containerEliminarBaja" style="display:none;margin-bottom:1rem;padding:1rem;background:#fcebeb;border:1px solid #f7c1c1;border-radius:6px;">
                     <label style="font-size:12px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.5rem;">⚠️ Este reactivo ya fue dado de baja</label>
-                    <label style="font-size:12px;color:#5f5e5a;display:block;margin-bottom:0.5rem;">Verificación: <strong id="labelVerificacionActual"></strong></label>
                     <label style="font-size:12px;color:#5f5e5a;display:block;margin-bottom:0.5rem;">Fecha de baja: <strong id="labelFechaBajaActual"></strong></label>
                 </div>
                 
@@ -696,6 +712,19 @@
     </div>
 
     <script>
+        // ===== USUARIOS PERMITIDOS =====
+        const USUARIOS_PERMITIDOS = {
+            'CHAEST': 'CHAEST1',
+            'CHCIT': 'CHCIT1',
+            'CHCRIO': 'CHCRIO1',
+            'CHTC': 'CHTC1',
+            'CHHE': 'CHHE1',
+            'CHHEM': 'CHHEM1',
+            'CHMMC': 'CHMMC1',
+            'CHQC': 'CHQC1',
+            'CHIMM': 'CHIMM1'
+        };
+        
         const CONTRASEÑA = 'hemato2026';
         let modo = 'entrada';
         let reactivos = [];
@@ -706,6 +735,7 @@
         let productoSeleccionado = null;
         let usuarioActual = null;
         let departamentoActual = null;
+        let reactivoEnUso = null;
 
         function cargarDatos() {
             const guardados = localStorage.getItem('reactivos_lab');
@@ -731,19 +761,31 @@
         // ===== LOGIN =====
         document.getElementById('formLogin').addEventListener('submit', (e) => {
             e.preventDefault();
-            const codigo = document.getElementById('inputCodigoUsuario').value.trim();
+            const usuario = document.getElementById('inputUsuario').value.trim();
+            const password = document.getElementById('inputPassword').value;
             const departamento = document.getElementById('selectDepartamento').value;
+            const mensajeError = document.getElementById('mensajeErrorLogin');
             
-            if (!codigo || !departamento) {
-                alert('Por favor completa todos los campos');
+            if (!usuario || !password || !departamento) {
+                mensajeError.textContent = 'Por favor completa todos los campos';
+                mensajeError.style.display = 'block';
                 return;
             }
             
-            usuarioActual = codigo;
+            // Validar usuario y contraseña
+            if (!USUARIOS_PERMITIDOS[usuario] || USUARIOS_PERMITIDOS[usuario] !== password) {
+                mensajeError.textContent = '❌ Usuario o contraseña incorrectos';
+                mensajeError.style.display = 'block';
+                document.getElementById('inputPassword').value = '';
+                document.getElementById('inputPassword').focus();
+                return;
+            }
+            
+            usuarioActual = usuario;
             departamentoActual = departamento;
             
             localStorage.setItem('usuario_lab', JSON.stringify({
-                codigo: codigo,
+                usuario: usuario,
                 departamento: departamento,
                 fechaLogin: new Date().toLocaleString('es-MX')
             }));
@@ -758,13 +800,31 @@
         
         function actualizarEncabezado() {
             const headerTexto = document.querySelector('.header-texto');
-            if (headerTexto) {
+            if (headerTexto && !headerTexto.querySelector('.usuario-info')) {
                 const p = document.createElement('p');
+                p.className = 'usuario-info';
                 p.style.cssText = 'font-size:11px;color:#888780;margin:0.5rem 0;padding-top:0.5rem;border-top:1px solid #d3d1c7';
                 p.textContent = '👤 ' + usuarioActual + ' | 🏥 ' + departamentoActual;
                 headerTexto.appendChild(p);
             }
         }
+        
+        function salir() {
+            const confirmacion = confirm('¿Cerrar sesión?');
+            if (!confirmacion) return;
+            
+            localStorage.removeItem('usuario_lab');
+            usuarioActual = null;
+            departamentoActual = null;
+            reactivos = [];
+            
+            document.getElementById('modalLogin').style.display = 'flex';
+            document.getElementById('formLogin').reset();
+            document.getElementById('mensajeErrorLogin').style.display = 'none';
+            document.getElementById('inputUsuario').focus();
+        }
+        
+        document.getElementById('btnSalir').addEventListener('click', salir);
         
         // Verificar si ya hay sesión
         window.addEventListener('load', () => {
@@ -772,7 +832,7 @@
             if (sesionGuardada) {
                 try {
                     const sesion = JSON.parse(sesionGuardada);
-                    usuarioActual = sesion.codigo;
+                    usuarioActual = sesion.usuario;
                     departamentoActual = sesion.departamento;
                     document.getElementById('modalLogin').style.display = 'none';
                     cargarDatos();
@@ -845,7 +905,7 @@
             // Mostrar tabla vacía
             if (reactivosDelProducto.length === 0) {
                 const tr = document.createElement('tr');
-                tr.innerHTML = '<td colspan="9" style="text-align: center; color: #5f5e5a; padding: 2rem;">Sin reactivos registrados</td>';
+                tr.innerHTML = '<td colspan="10" style="text-align: center; color: #5f5e5a; padding: 2rem;">Sin reactivos registrados</td>';
                 tbody.appendChild(tr);
                 return;
             }
@@ -863,7 +923,8 @@
                     <td>${r.fechaCaducidad || '<span style="color:red">⚠️ Falta</span>'}</td>
                     <td>${r.tempRecepcion || r.entrada.temp || '-'}</td>
                     <td>${usoEstado} ${r.uso.fecha || ''}</td>
-                    <td>${r.baja.verificacion || '-'}</td>
+                    <td>${r.uso.revision || '-'}</td>
+                    <td>${r.uso.verificacion || '-'}</td>
                     <td>${bajaEstado} ${r.baja.fecha || ''}</td>
                     <td><button class="btn-editar" onclick="editarReactivoConCheck('${r.id}')">✏️</button></td>
                 `;
@@ -947,43 +1008,48 @@
 
         function abrirFormulario(reactivo) {
             if (modo === 'uso') {
-                actualizarReactivo(reactivo.id, 'uso', {
+                const revision = prompt('Revisión del inserto (Ej: VISUAL OK, OK, VÁLIDO):', reactivo.uso.revision || '');
+                if (revision === null) return;
+                
+                // Guardar revisión y pedir verificación
+                reactivoEnUso = reactivo;
+                reactivoEnUso.usoRevision = revision;
+                document.getElementById('modalSeleccionarVerificacion').classList.add('activo');
+            } else if (modo === 'baja') {
+                // En BAJA solo confirmar y registrar
+                const confirmacion = confirm('¿Confirmar baja de ' + reactivo.lote + ' (pieza ' + reactivo.numeroPieza + '/' + reactivo.numeroPiezasTotal + ')?');
+                if (!confirmacion) return;
+                
+                actualizarReactivo(reactivo.id, 'baja', {
                     completado: true,
                     bloqueado: true,
-                    fecha: new Date().toLocaleDateString('es-MX')
+                    fecha: new Date().toLocaleDateString('es-MX'),
+                    verificacion: null
                 });
-                alert('✅ Uso registrado correctamente');
+                alert('✅ Reactivo dado de baja correctamente');
                 document.getElementById('codigoInput').value = '';
                 document.getElementById('codigoInput').focus();
-            } else if (modo === 'baja') {
-                reactivoPendienteBaja = reactivo;
-                document.getElementById('modalSeleccionarVerificacion').classList.add('activo');
             }
         }
         
-        function procesarBaja(tipoVerificacion) {
-            if (!reactivoPendienteBaja) return;
+        function procesarUso(verificacion) {
+            if (!reactivoEnUso) return;
             
             document.getElementById('modalSeleccionarVerificacion').classList.remove('activo');
             
-            const confirmacion = confirm('¿Confirmar baja de ' + reactivoPendienteBaja.lote + ' (pieza ' + reactivoPendienteBaja.numeroPieza + '/' + reactivoPendienteBaja.numeroPiezasTotal + ')?\n\nVerificación: ' + tipoVerificacion);
-            if (!confirmacion) {
-                reactivoPendienteBaja = null;
-                return;
-            }
-            
-            actualizarReactivo(reactivoPendienteBaja.id, 'baja', {
+            actualizarReactivo(reactivoEnUso.id, 'uso', {
                 completado: true,
                 bloqueado: true,
                 fecha: new Date().toLocaleDateString('es-MX'),
-                verificacion: tipoVerificacion
+                revision: reactivoEnUso.usoRevision,
+                verificacion: verificacion
             });
-            
-            alert('✅ Reactivo dado de baja correctamente');
-            reactivoPendienteBaja = null;
+            alert('✅ Uso registrado correctamente\n\nRevisión: ' + reactivoEnUso.usoRevision + '\nVerificación: ' + verificacion);
+            reactivoEnUso = null;
             document.getElementById('codigoInput').value = '';
             document.getElementById('codigoInput').focus();
         }
+        
 
         function actualizarReactivo(id, m, datos) {
             const r = reactivos.find(re => re.id === id);
@@ -1013,9 +1079,9 @@
                     numeroPieza: i,
                     numeroPiezasTotal: numeroPiezas,
                     departamento: departamentoActual,
-                    entrada: { completado: true, bloqueado: true, fecha: new Date().toLocaleDateString('es-MX'), temp: form.get('tempRecepcion') || '', revision: null, fad10: null },
-                    uso: { completado: false, bloqueado: false, fecha: null },
-                    baja: { completado: false, bloqueado: false, fecha: null, verificacion: null }
+                    entrada: { completado: true, bloqueado: true, fecha: new Date().toLocaleDateString('es-MX'), temp: form.get('tempRecepcion') || '', revision: null, fad10: form.get('fad10') || '' },
+                    uso: { completado: false, bloqueado: false, fecha: null, revision: null, verificacion: null },
+                    baja: { completado: false, bloqueado: false, fecha: null }
                 };
                 reactivos.push(nuevoReactivo);
             }
@@ -1079,6 +1145,8 @@
             document.getElementById('editTemperatura').value = reactivoEnEdicion.tempRecepcion || reactivoEnEdicion.entrada.temp || '';
             document.getElementById('editRevision').value = reactivoEnEdicion.entrada.revision || '';
             document.getElementById('editFAD10').value = reactivoEnEdicion.entrada.fad10 || '';
+            document.getElementById('editRevisionUso').value = reactivoEnEdicion.uso.revision || '';
+            document.getElementById('editVerificacionUso').value = reactivoEnEdicion.uso.verificacion || '';
             
             // Mostrar botón Eliminar baja si está dado de baja
             const containerEliminarBaja = document.getElementById('containerEliminarBaja');
@@ -1087,7 +1155,6 @@
             if (reactivoEnEdicion.baja.completado) {
                 containerEliminarBaja.style.display = 'block';
                 btnEliminarBaja.style.display = 'block';
-                document.getElementById('labelVerificacionActual').textContent = reactivoEnEdicion.baja.verificacion || 'N/A';
                 document.getElementById('labelFechaBajaActual').textContent = reactivoEnEdicion.baja.fecha || 'N/A';
             } else {
                 containerEliminarBaja.style.display = 'none';
@@ -1106,6 +1173,8 @@
             reactivoEnEdicion.entrada.temp = document.getElementById('editTemperatura').value;
             reactivoEnEdicion.entrada.revision = document.getElementById('editRevision').value;
             reactivoEnEdicion.entrada.fad10 = document.getElementById('editFAD10').value;
+            reactivoEnEdicion.uso.revision = document.getElementById('editRevisionUso').value;
+            reactivoEnEdicion.uso.verificacion = document.getElementById('editVerificacionUso').value;
             
             guardarDatos();
             actualizarTabla();
@@ -1178,7 +1247,7 @@
 
         document.getElementById('btnCancelarVerificacion').addEventListener('click', () => {
             document.getElementById('modalSeleccionarVerificacion').classList.remove('activo');
-            reactivoPendienteBaja = null;
+            reactivoEnUso = null;
             document.getElementById('codigoInput').focus();
         });
 
@@ -1208,6 +1277,7 @@
             document.querySelector('#formNuevo input[name="tempAlmacenaje"]').value = loteExistente.tempAlmacenaje || '';
             document.querySelector('#formNuevo input[name="tempRecepcion"]').value = loteExistente.tempRecepcion || '';
             document.querySelector('#formNuevo input[name="docExterno"]').value = loteExistente.docExterno || '';
+            document.querySelector('#formNuevo input[name="fad10"]').value = loteExistente.entrada.fad10 || '';
             document.querySelector('#formNuevo input[name="numeroPiezas"]').value = '1';
             document.querySelector('#formNuevo input[name="fechaCaducidad"]').value = '';
             document.querySelector('#formNuevo input[name="fechaCaducidad"]').focus();
@@ -1220,9 +1290,9 @@
         }
 
         document.getElementById('btnExportar').addEventListener('click', () => {
-            let csv = 'FECHA RECEPCIÓN,No. DE LOTE,FECHA CADUCIDAD,T° RECEPCIÓN,REVISIÓN INSERTO,FAD-10,FECHA PUESTA EN USO,VERIFICACIÓN,FECHA BAJA\n';
+            let csv = 'FECHA RECEPCIÓN,No. DE LOTE,FECHA CADUCIDAD,T° RECEPCIÓN,FAD-10,FECHA PUESTA EN USO,REVISIÓN USO,VERIFICACIÓN USO,FECHA BAJA\n';
             reactivos.forEach(r => {
-                csv += '"' + (r.entrada.fecha || '') + '","' + r.lote + '","' + (r.fechaCaducidad || '') + '","' + (r.entrada.temp || '') + '","' + (r.entrada.revision || '') + '","' + (r.entrada.fad10 || '') + '","' + (r.uso.fecha || '') + '","' + (r.baja.verificacion || '') + '","' + (r.baja.fecha || '') + '"\n';
+                csv += '"' + (r.entrada.fecha || '') + '","' + r.lote + '","' + (r.fechaCaducidad || '') + '","' + (r.entrada.temp || '') + '","' + (r.entrada.fad10 || '') + '","' + (r.uso.fecha || '') + '","' + (r.uso.revision || '') + '","' + (r.uso.verificacion || '') + '","' + (r.baja.fecha || '') + '"\n';
             });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
@@ -1279,7 +1349,7 @@
             
             html += '<table>';
             html += '<thead><tr>';
-            html += '<th>FECHA RECEPCIÓN</th><th>No. LOTE</th><th>FECHA CADUCIDAD</th><th>T° RECEPCIÓN</th><th>REVISIÓN</th><th>FAD-10</th><th>FECHA USO</th><th>VERIFICACIÓN</th><th>FECHA BAJA</th>';
+            html += '<th>FECHA RECEPCIÓN</th><th>No. LOTE</th><th>FECHA CADUCIDAD</th><th>T° RECEPCIÓN</th><th>FAD-10</th><th>FECHA USO</th><th>REVISIÓN USO</th><th>VERIFICACIÓN USO</th><th>FECHA BAJA</th>';
             html += '</tr></thead><tbody>';
             
             if (reactivosAImprimir.length === 0) {
@@ -1291,10 +1361,10 @@
                     html += '<td><strong>' + r.lote + '</strong></td>';
                     html += '<td>' + (r.fechaCaducidad || '') + '</td>';
                     html += '<td>' + (r.tempRecepcion || r.entrada.temp || '') + '</td>';
-                    html += '<td>' + (r.entrada.revision || '') + '</td>';
                     html += '<td>' + (r.entrada.fad10 || '') + '</td>';
                     html += '<td>' + (r.uso.fecha || '') + '</td>';
-                    html += '<td>' + (r.baja.verificacion || '') + '</td>';
+                    html += '<td>' + (r.uso.revision || '') + '</td>';
+                    html += '<td>' + (r.uso.verificacion || '') + '</td>';
                     html += '<td>' + (r.baja.fecha || '') + '</td>';
                     html += '</tr>';
                 });
