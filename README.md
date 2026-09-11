@@ -2,15 +2,18 @@
 
 Sistema interactivo de gestión de inventario de reactivos para el **Servicio de Hematología del Hospital Universitario "Dr. José Eleuterio González"**.
 
-## ✨ Características
+## ✨ Características v2.0
 
-- 📥 **Registro de entrada** - Captura automática de lotes, fechas y datos
-- ⚙️ **Seguimiento de uso** - Registra cuándo se usa cada reactivo
-- 🗑️ **Control de baja** - Documenta el retiro del inventario
+- 📥 **Registro de entrada** - Captura lote, producto, fabricante, fecha de caducidad y cantidad de piezas
+- ⚙️ **Seguimiento de uso** - Registra cuándo se utiliza cada pieza
+- 🗑️ **Control de baja** - Documenta el retiro de inventario (por pieza)
+- 📦 **Control por piezas** - Si recibes 6 piezas, crea 6 registros independientes
 - 🔐 **Seguridad con contraseña** - `hemato2026` para desbloquear registros
-- 📊 **Exportar a Excel** - Descarga los datos en formato CSV
-- 💾 **Almacenamiento local** - Los datos se guardan en tu navegador
+- 📊 **Exportar a Excel** - CSV compatible con Excel
+- 🖨️ **Imprimir reportes** - Genera reportes formateados para imprimir
+- 💾 **Historial permanente** - Los datos NUNCA se borran (auditoría)
 - 📱 **Responsive** - Funciona en computadoras, tablets y celulares
+- ✅ **Múltiples lotes iguales** - Permite registrar el mismo lote en diferentes fechas
 
 ## 🚀 Instalación rápida
 
@@ -41,52 +44,64 @@ Solo abre el archivo `index.html` en tu navegador. ¡Funciona sin conexión!
 
 ## 🖼️ Configurar logo
 
-El sistema incluye un banner con los logos del UANL, Hospital Universitario y Centro Universitario Contra el Cáncer.
+El sistema ya incluye la referencia al logo que subiste: `inicio-logo01.png`
 
-### Pasos para subir tu logo:
+### Si el logo no aparece:
 
-1. **Crea una carpeta `logos`** en tu repositorio
-   - Ve a tu repositorio en GitHub
-   - Click en "Add file" → "Create new file"
-   - Escribe: `logos/.gitkeep`
-   - Commit
+1. Verifica que subiste la imagen directamente en la raíz del repositorio (no en carpeta)
+   - ✅ Correcto: `https://github.com/yairchaveze/control-de-reactivo-hemato-hu/blob/main/inicio-logo01.png`
+   - ❌ Incorrecto: `logos/inicio-logo01.png`
 
-2. **Sube la imagen:**
-   - Desde GitHub web: "Add file" → "Upload files"
-   - Sube tu imagen PNG o JPG:
-     - `inicio-logo01.png` (o cámbialo a otro nombre)
-
-3. **La URL se forma automáticamente:**
-   ```
-   https://raw.githubusercontent.com/yairchaveze/control-de-reactivo-hemato-hu/main/logos/inicio-logo01.png
-   ```
-
-4. **Si cambias el nombre del archivo**, edita el `index.html`:
+2. Si lo subiste en carpeta, ajusta la URL en `index.html`:
    - Busca: `inicio-logo01.png`
-   - Reemplaza con tu nombre de archivo
+   - Reemplaza por: `logos/inicio-logo01.png`
 
 ---
 
 ## 📖 Cómo usar
 
-### Flujo típico:
+### Flujo de entrada:
 
-1. **Selecciona modo:**
-   - 📥 **Entrada** - Reactivo llega al laboratorio
-   - ⚙️ **Uso** - Se utiliza el reactivo
-   - 🗑️ **Baja** - Se retira del inventario
+1. **Selecciona modo: ENTRADA**
+   - 📥 Entrada (para reactivos nuevos)
 
 2. **Escanea o escribe el código de lote**
-   - Si es nuevo: Completa datos (Producto, Fabricante, etc.)
-   - Si existe: Llena los datos faltantes
+   - Pega el código en la caja
+   - Click en "Aceptar" (o presiona Enter)
 
-3. **Los datos se guardan automáticamente**
-   - Bloqueados después de completar cada etapa
-   - Para editar: ingresa contraseña `hemato2026`
+3. **Si es la primera vez del lote:**
+   - Se abre un formulario
+   - Completa: Producto, Fabricante, Fecha de caducidad, Número de piezas
+   - Si recibiste 6 piezas → escribe `6`
+   - El sistema crea automáticamente 6 registros (1, 2, 3, 4, 5, 6)
 
-4. **Exporta cuando necesites:**
-   - Click en "Exportar a Excel"
-   - Se descarga en formato CSV
+4. **Si es el mismo lote 2 meses después:**
+   - El sistema lo reconoce como NUEVO ingreso (diferente fecha)
+   - Crea nuevos registros para esas piezas
+
+### Flujo de uso:
+
+1. **Selecciona modo: USO**
+2. **Escanea el código de lote**
+3. **Si hay múltiples piezas:**
+   - El sistema muestra: "Hay 6 piezas de este lote"
+   - Pide que escanees de nuevo para cada pieza que uses
+4. **Registra la verificación del desempeño** (Ej: VISUAL OK)
+5. **La pieza se marca como usada** ✅
+
+### Flujo de baja:
+
+1. **Selecciona modo: BAJA**
+2. **Escanea el código de lote**
+3. **Confirma la baja de la pieza específica**
+4. **La pieza se marca como dada de baja** ✅
+
+### Acciones principales:
+
+- **Imprimir**: Abre una vista de impresión del inventario actual
+- **Exportar Excel**: Descarga un archivo CSV con todos los datos (histórico completo)
+
+**⚠️ IMPORTANTE:** Los datos NUNCA se borran. Siempre tendrás el histórico completo.
 
 ---
 

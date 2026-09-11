@@ -199,21 +199,6 @@
             background: #4a7016;
         }
         
-        .btn-limpiar {
-            background: #A32D2D;
-            color: white;
-            padding: 10px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background 0.2s;
-        }
-        
-        .btn-limpiar:hover {
-            background: #791F1F;
-        }
-        
         .tabla-contenedor {
             overflow-x: auto;
             border: 1px solid #d3d1c7;
@@ -223,7 +208,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
+            font-size: 12px;
         }
         
         thead tr {
@@ -232,13 +217,13 @@
         }
         
         th {
-            padding: 12px;
+            padding: 10px;
             text-align: left;
             font-weight: 500;
         }
         
         td {
-            padding: 12px;
+            padding: 10px;
             border-bottom: 1px solid #d3d1c7;
         }
         
@@ -280,6 +265,8 @@
             min-width: 400px;
             max-width: 500px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-height: 90vh;
+            overflow-y: auto;
         }
         
         .modal-contenido h3 {
@@ -421,7 +408,7 @@
 <body>
     <div class="header">
         <div class="header-logos">
-            <img src="https://raw.githubusercontent.com/yairchaveze/control-de-reactivo-hemato-hu/main/logos/inicio-logo01.png" alt="UANL - HU - Hematología" class="logo-banner">
+            <img src="https://raw.githubusercontent.com/yairchaveze/control-de-reactivo-hemato-hu/main/inicio-logo01.png" alt="UANL - HU - Hematología" class="logo-banner">
         </div>
         <div class="header-texto">
             <h1>Control de Reactivos y Consumibles</h1>
@@ -444,18 +431,21 @@
             <h2>Escanear o ingresar código</h2>
             <div class="entrada-lote">
                 <label for="codigoInput">Código de lote (escanea o escribe):</label>
-                <input type="text" id="codigoInput" placeholder="Ej: 2509043241" autofocus>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="codigoInput" placeholder="Ej: 2509043241" autofocus style="flex: 1;">
+                    <button id="btnAceptarCodigo" class="btn" style="background: #0C447C; color: white; padding: 12px 24px; font-weight: 500;">Aceptar</button>
+                </div>
             </div>
         </div>
 
         <div class="seccion">
             <div class="metricas">
                 <div class="metrica metrica-vigentes">
-                    <div class="metrica-label">Reactivos vigentes</div>
+                    <div class="metrica-label">Piezas vigentes</div>
                     <div class="metrica-numero" id="conteoVigentes">0</div>
                 </div>
                 <div class="metrica metrica-baja">
-                    <div class="metrica-label">Dados de baja</div>
+                    <div class="metrica-label">Piezas dadas de baja</div>
                     <div class="metrica-numero" id="conteoBaja">0</div>
                 </div>
             </div>
@@ -464,8 +454,8 @@
         <div class="seccion">
             <h2>Acciones</h2>
             <div class="botones-acciones">
-                <button class="btn-excel" id="btnExportar">📊 Exportar a Excel</button>
-                <button class="btn-limpiar" id="btnLimpiar">🗑️ Limpiar datos</button>
+                <button class="btn-excel" id="btnImprimir">🖨️ Imprimir</button>
+                <button class="btn-excel" id="btnExportar">📊 Exportar Excel</button>
             </div>
         </div>
 
@@ -477,8 +467,9 @@
                         <tr>
                             <th>Lote</th>
                             <th>Producto</th>
-                            <th>Fabricante</th>
+                            <th>Pieza</th>
                             <th>Entrada</th>
+                            <th>Caducidad</th>
                             <th>Uso</th>
                             <th>Baja</th>
                         </tr>
@@ -500,6 +491,8 @@
                 <input type="text" name="procedimiento" placeholder="Procedimiento de examen">
                 <input type="text" name="tempAlmacenaje" placeholder="Temperatura almacenaje (Ej: 15-30°C)">
                 <input type="text" name="docExterno" placeholder="Documento externo">
+                <input type="date" name="fechaCaducidad" placeholder="Fecha de caducidad" required>
+                <input type="number" name="numeroPiezas" placeholder="Número de piezas recibidas" min="1" value="1" required>
                 <div class="modal-botones">
                     <button type="submit" class="btn-crear">Crear</button>
                     <button type="button" class="btn-cancelar" id="btnCancelarNuevo">Cancelar</button>
@@ -521,7 +514,7 @@
     </div>
 
     <div class="footer">
-        <p>Control de Reactivos v1.0 | Datos almacenados localmente en tu navegador</p>
+        <p>Control de Reactivos v2.0 | Datos almacenados localmente en tu navegador</p>
         <p><a href="https://github.com/yairchaveze/control-de-reactivo-hemato-hu" target="_blank">Ver código en GitHub</a></p>
     </div>
 
@@ -563,7 +556,7 @@
             
             if (reactivos.length === 0) {
                 const tr = document.createElement('tr');
-                tr.innerHTML = '<td colspan="6" style="text-align: center; color: #5f5e5a; padding: 2rem;">Sin reactivos registrados</td>';
+                tr.innerHTML = '<td colspan="7" style="text-align: center; color: #5f5e5a; padding: 2rem;">Sin reactivos registrados</td>';
                 tbody.appendChild(tr);
                 return;
             }
@@ -577,8 +570,9 @@
                 tr.innerHTML = `
                     <td><strong>${r.lote}</strong></td>
                     <td>${r.producto}</td>
-                    <td>${r.fabricante}</td>
+                    <td>${r.numeroPieza}/${r.numeroPiezasTotal}</td>
                     <td>${entradaEstado} ${r.entrada.fecha || ''}</td>
+                    <td>${r.fechaCaducidad || ''}</td>
                     <td>${usoEstado} ${r.uso.fecha || ''}</td>
                     <td>${bajaEstado} ${r.baja.fecha || ''}</td>
                 `;
@@ -607,24 +601,40 @@
             if (e.key === 'Enter') manejarEscaneo();
         });
 
+        document.getElementById('btnAceptarCodigo').addEventListener('click', manejarEscaneo);
+
         function manejarEscaneo() {
             const codigo = document.getElementById('codigoInput').value.trim();
             if (!codigo) return;
             
-            const existente = reactivos.find(r => r.lote === codigo);
-            
-            if (!existente) {
+            if (modo === 'entrada') {
+                // En entrada, siempre abrimos formulario de nuevo reactivo
                 nuevoLoteModal = codigo;
                 document.getElementById('modalNuevo').classList.add('activo');
                 document.querySelector('#formNuevo input[name="producto"]').focus();
-            } else if (existente[modo].bloqueado) {
-                passwordModalData = { reactivo: existente, modo };
-                document.getElementById('modalPassword').classList.add('activo');
-                document.getElementById('inputPassword').focus();
-            } else if (modo === 'baja' || (modo === 'entrada' && !existente.entrada.completado) || (modo === 'uso' && existente.entrada.completado)) {
-                abrirFormulario(existente);
             } else {
-                alert('Este reactivo ya fue completado en este estado.');
+                // En uso y baja, buscamos registros sin completar
+                const registros = reactivos.filter(r => r.lote === codigo && !r[modo].completado);
+                
+                if (registros.length === 0) {
+                    alert('No hay registros pendientes para este código en modo ' + modo);
+                } else if (registros.length === 1) {
+                    const reg = registros[0];
+                    if (reg[modo].bloqueado) {
+                        passwordModalData = { reactivo: reg, modo };
+                        document.getElementById('modalPassword').classList.add('activo');
+                        document.getElementById('inputPassword').focus();
+                    } else {
+                        abrirFormulario(reg);
+                    }
+                } else {
+                    // Múltiples piezas del mismo lote
+                    let mensaje = `Hay ${registros.length} piezas de este lote:\n\n`;
+                    registros.forEach((r, i) => {
+                        mensaje += `${i + 1}. Pieza ${r.numeroPieza}/${r.numeroPiezasTotal}\n`;
+                    });
+                    alert(mensaje);
+                }
             }
             
             document.getElementById('codigoInput').value = '';
@@ -633,28 +643,16 @@
         function abrirFormulario(reactivo) {
             let cambios = {};
             
-            if (modo === 'entrada') {
-                const temp = prompt('Temperatura de recepción (Ej: 23°C):', reactivo.entrada.temp || '23°C');
-                if (temp === null) return;
-                cambios.temp = temp;
-                
-                const revision = prompt('Revisión del inserto:', reactivo.entrada.revision || '');
-                if (revision === null) return;
-                cambios.revision = revision;
-                
-                const fad10 = prompt('FAD-10:', reactivo.entrada.fad10 || '');
-                if (fad10 === null) return;
-                cambios.fad10 = fad10;
-            } else if (modo === 'uso') {
+            if (modo === 'uso') {
                 const verificacion = prompt('Verificación del desempeño (Ej: VISUAL OK):', reactivo.uso.verificacion || '');
                 if (verificacion === null) return;
                 cambios.verificacion = verificacion;
             } else if (modo === 'baja') {
-                const confirmacion = confirm(`¿Confirmar baja de ${reactivo.lote}?`);
+                const confirmacion = confirm(`¿Confirmar baja de ${reactivo.lote} (pieza ${reactivo.numeroPieza}/${reactivo.numeroPiezasTotal})?`);
                 if (!confirmacion) return;
             }
             
-            actualizarReactivo(reactivo.lote, modo, {
+            actualizarReactivo(reactivo.id, modo, {
                 completado: true,
                 bloqueado: true,
                 fecha: new Date().toLocaleDateString('es-MX'),
@@ -664,8 +662,8 @@
             alert(`✅ ${modo.charAt(0).toUpperCase() + modo.slice(1)} registrada exitosamente`);
         }
 
-        function actualizarReactivo(lote, m, datos) {
-            const r = reactivos.find(re => re.lote === lote);
+        function actualizarReactivo(id, m, datos) {
+            const r = reactivos.find(re => re.id === id);
             if (r) {
                 r[m] = { ...r[m], ...datos };
                 guardarDatos();
@@ -677,27 +675,35 @@
         document.getElementById('formNuevo').addEventListener('submit', (e) => {
             e.preventDefault();
             const form = new FormData(e.target);
+            const numeroPiezas = parseInt(form.get('numeroPiezas')) || 1;
             
-            const nuevoReactivo = {
-                lote: nuevoLoteModal,
-                producto: form.get('producto'),
-                fabricante: form.get('fabricante'),
-                procedimiento: form.get('procedimiento') || '',
-                tempAlmacenaje: form.get('tempAlmacenaje') || '',
-                docExterno: form.get('docExterno') || '',
-                entrada: { completado: false, bloqueado: false, fecha: null, temp: null, revision: null, fad10: null },
-                uso: { completado: false, bloqueado: false, fecha: null, verificacion: null },
-                baja: { completado: false, bloqueado: false, fecha: null }
-            };
+            // Crear un registro para cada pieza
+            for (let i = 1; i <= numeroPiezas; i++) {
+                const nuevoReactivo = {
+                    id: `${nuevoLoteModal}-${new Date().getTime()}-${i}`,
+                    lote: nuevoLoteModal,
+                    producto: form.get('producto'),
+                    fabricante: form.get('fabricante'),
+                    procedimiento: form.get('procedimiento') || '',
+                    tempAlmacenaje: form.get('tempAlmacenaje') || '',
+                    docExterno: form.get('docExterno') || '',
+                    fechaCaducidad: form.get('fechaCaducidad'),
+                    numeroPieza: i,
+                    numeroPiezasTotal: numeroPiezas,
+                    entrada: { completado: false, bloqueado: false, fecha: null, temp: null, revision: null, fad10: null },
+                    uso: { completado: false, bloqueado: false, fecha: null, verificacion: null },
+                    baja: { completado: false, bloqueado: false, fecha: null }
+                };
+                
+                reactivos.push(nuevoReactivo);
+            }
             
-            reactivos.push(nuevoReactivo);
             guardarDatos();
             actualizarTabla();
             document.getElementById('modalNuevo').classList.remove('activo');
             e.target.reset();
             
-            // Continuar con el proceso de entrada
-            abrirFormulario(nuevoReactivo);
+            alert(`✅ Se registraron ${numeroPiezas} pieza(s) del lote ${nuevoLoteModal}`);
         });
 
         document.getElementById('btnCancelarNuevo').addEventListener('click', () => {
@@ -728,10 +734,10 @@
 
         // ===== EXPORTAR EXCEL =====
         document.getElementById('btnExportar').addEventListener('click', () => {
-            let csv = 'FECHA RECEPCIÓN,No. DE LOTE,FECHA CADUCIDAD,T° RECEPCIÓN,REVISIÓN INSERTO,FAD-10,FECHA PUESTA EN USO,VERIFICACIÓN DESEMPEÑO,FECHA BAJA\n';
+            let csv = 'FECHA RECEPCIÓN,No. DE LOTE,FECHA CADUCIDAD,T° RECEPCIÓN,REVISIÓN INSERTO,FAD-10,FECHA PUESTA EN USO,VERIFICACIÓN DESEMPEÑO,FECHA BAJA,PIEZA\n';
             
             reactivos.forEach(r => {
-                csv += `"${r.entrada.fecha || ''}","${r.lote}","","${r.entrada.temp || ''}","${r.entrada.revision || ''}","${r.entrada.fad10 || ''}","${r.uso.fecha || ''}","${r.uso.verificacion || ''}","${r.baja.fecha || ''}"\n`;
+                csv += `"${r.entrada.fecha || ''}","${r.lote}","${r.fechaCaducidad || ''}","${r.entrada.temp || ''}","${r.entrada.revision || ''}","${r.entrada.fad10 || ''}","${r.uso.fecha || ''}","${r.uso.verificacion || ''}","${r.baja.fecha || ''}","${r.numeroPieza}/${r.numeroPiezasTotal}"\n`;
             });
             
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -745,16 +751,32 @@
             document.body.removeChild(link);
         });
 
-        // ===== LIMPIAR DATOS =====
-        document.getElementById('btnLimpiar').addEventListener('click', () => {
-            if (confirm('⚠️ ¿Estás seguro? Esto eliminará TODOS los datos del inventario.')) {
-                if (confirm('Esta acción no se puede deshacer. ¿Confirmas?')) {
-                    reactivos = [];
-                    guardarDatos();
-                    actualizarTabla();
-                    alert('Datos eliminados');
-                }
-            }
+        // ===== IMPRIMIR =====
+        document.getElementById('btnImprimir').addEventListener('click', () => {
+            const contenido = document.getElementById('tablaReactivos').outerHTML;
+            const ventana = window.open('', '', 'width=1000,height=600');
+            ventana.document.write(`
+                <html>
+                <head>
+                    <title>Impresión - Control de Reactivos</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 1cm; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+                        th { background-color: #ddd; font-weight: bold; }
+                        h2 { text-align: center; }
+                    </style>
+                </head>
+                <body>
+                    <h2>Control de Reactivos y Consumibles</h2>
+                    <p><strong>Servicio de Hematología - Hospital Universitario "Dr. José Eleuterio González"</strong></p>
+                    <p>Fecha de impresión: ${new Date().toLocaleString('es-MX')}</p>
+                    ${contenido}
+                </body>
+                </html>
+            `);
+            ventana.document.close();
+            ventana.print();
         });
 
         // ===== INICIAR =====
