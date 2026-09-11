@@ -481,7 +481,20 @@
         </div>
     </div>
 
-    <div class="modal" id="modalNuevo">
+    <div class="modal" id="modalSeleccionarLote">
+        <div class="modal-contenido">
+            <h3>Lote ya registrado</h3>
+            <p id="mensajeSeleccion">Este lote ya existe. ¿Qué deseas hacer?</p>
+            <div style="background: #f1efe8; padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem; font-size: 14px;">
+                <p><strong>Datos anteriores:</strong></p>
+                <div id="datosAnterioresResumen" style="margin-top: 0.5rem;"></div>
+            </div>
+            <div class="modal-botones">
+                <button id="btnUsarAnteriores" class="btn-crear">✓ Usar datos anteriores</button>
+                <button id="btnNuevoReactivo" class="btn-desbloquear">➕ Registrar nuevo</button>
+            </div>
+        </div>
+    </div>
         <div class="modal-contenido">
             <h3>Registrar nuevo reactivo</h3>
             <p>Completa los datos del reactivo que ingresa al laboratorio:</p>
@@ -608,10 +621,19 @@
             if (!codigo) return;
             
             if (modo === 'entrada') {
-                // En entrada, siempre abrimos formulario de nuevo reactivo
-                nuevoLoteModal = codigo;
-                document.getElementById('modalNuevo').classList.add('activo');
-                document.querySelector('#formNuevo input[name="producto"]').focus();
+                // Buscar si el lote ya existe
+                const loteExistente = reactivos.find(r => r.lote === codigo);
+                
+                if (loteExistente) {
+                    // Mostrar modal con opción de usar datos anteriores
+                    nuevoLoteModal = codigo;
+                    mostrarModalSeleccionLote(loteExistente);
+                } else {
+                    // Nuevo lote - abrir formulario vacío
+                    nuevoLoteModal = codigo;
+                    document.getElementById('modalNuevo').classList.add('activo');
+                    document.querySelector('#formNuevo input[name="producto"]').focus();
+                }
             } else {
                 // En uso y baja, buscamos registros sin completar
                 const registros = reactivos.filter(r => r.lote === codigo && !r[modo].completado);
@@ -638,6 +660,22 @@
             }
             
             document.getElementById('codigoInput').value = '';
+        }
+
+        function mostrarModalSeleccionLote(loteExistente) {
+            // Preparar resumen de datos anteriores
+            const resumen = document.getElementById('datosAnterioresResumen');
+            resumen.innerHTML = `
+                <div style="line-height: 1.8;">
+                    <strong>Producto:</strong> ${loteExistente.producto}<br>
+                    <strong>Fabricante:</strong> ${loteExistente.fabricante}<br>
+                    <strong>Procedimiento:</strong> ${loteExistente.procedimiento || '-'}<br>
+                    <strong>Temperatura:</strong> ${loteExistente.tempAlmacenaje || '-'}<br>
+                    <strong>Documento:</strong> ${loteExistente.docExterno || '-'}
+                </div>
+            `;
+            
+            document.getElementById('modalSeleccionarLote').classList.add('activo');
         }
 
         function abrirFormulario(reactivo) {
@@ -732,6 +770,40 @@
             document.getElementById('inputPassword').value = '';
         });
 
+        // ===== BOTONES SELECCIONAR LOTE =====
+        document.getElementById('btnUsarAnteriores').addEventListener('click', () => {
+            const loteExistente = reactivos.find(r => r.lote === nuevoLoteModal);
+            document.getElementById('modalSeleccionarLote').classList.remove('activo');
+            abrirFormularioConDatosAnteriores(loteExistente);
+        });
+
+        document.getElementById('btnNuevoReactivo').addEventListener('click', () => {
+            document.getElementById('modalSeleccionarLote').classList.remove('activo');
+            document.getElementById('modalNuevo').classList.add('activo');
+            document.querySelector('#formNuevo input[name="producto"]').focus();
+            limpiarFormularioNuevo();
+        });
+
+        function abrirFormularioConDatosAnteriores(loteExistente) {
+            // Pre-llenar el formulario con datos anteriores
+            document.getElementById('formNuevo').reset();
+            document.querySelector('#formNuevo input[name="producto"]').value = loteExistente.producto;
+            document.querySelector('#formNuevo input[name="fabricante"]').value = loteExistente.fabricante;
+            document.querySelector('#formNuevo input[name="procedimiento"]').value = loteExistente.procedimiento || '';
+            document.querySelector('#formNuevo input[name="tempAlmacenaje"]').value = loteExistente.tempAlmacenaje || '';
+            document.querySelector('#formNuevo input[name="docExterno"]').value = loteExistente.docExterno || '';
+            document.querySelector('#formNuevo input[name="numeroPiezas"]').value = '1';
+            document.querySelector('#formNuevo input[name="fechaCaducidad"]').value = '';
+            document.querySelector('#formNuevo input[name="fechaCaducidad"]').focus();
+            
+            document.getElementById('modalNuevo').classList.add('activo');
+        }
+
+        function limpiarFormularioNuevo() {
+            document.getElementById('formNuevo').reset();
+            document.querySelector('#formNuevo input[name="producto"]').focus();
+        }
+
         // ===== EXPORTAR EXCEL =====
         document.getElementById('btnExportar').addEventListener('click', () => {
             let csv = 'FECHA RECEPCIÓN,No. DE LOTE,FECHA CADUCIDAD,T° RECEPCIÓN,REVISIÓN INSERTO,FAD-10,FECHA PUESTA EN USO,VERIFICACIÓN DESEMPEÑO,FECHA BAJA,PIEZA\n';
@@ -753,30 +825,149 @@
 
         // ===== IMPRIMIR =====
         document.getElementById('btnImprimir').addEventListener('click', () => {
-            const contenido = document.getElementById('tablaReactivos').outerHTML;
-            const ventana = window.open('', '', 'width=1000,height=600');
-            ventana.document.write(`
-                <html>
+            // Preparar datos de la sesión actual
+            const hoy = new Date();
+            const fechaImpresion = hoy.toLocaleDateString('es-MX');
+            const horaImpresion = hoy.toLocaleTimeString('es-MX');
+            
+            // Crear HTML del formulario FAD-25-04
+            const html = `
+                <!DOCTYPE html>
+                <html lang="es">
                 <head>
-                    <title>Impresión - Control de Reactivos</title>
+                    <meta charset="UTF-8">
+                    <title>FAD-25-04 - Control de Reactivos</title>
                     <style>
-                        body { font-family: Arial, sans-serif; margin: 1cm; }
-                        table { width: 100%; border-collapse: collapse; }
-                        th, td { border: 1px solid #000; padding: 8px; text-align: left; }
-                        th { background-color: #ddd; font-weight: bold; }
-                        h2 { text-align: center; }
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        body { font-family: Arial, sans-serif; padding: 2cm; background: white; }
+                        .contenedor { width: 100%; max-width: 21cm; margin: 0 auto; }
+                        .header { text-align: center; margin-bottom: 1.5cm; padding-bottom: 1cm; border-bottom: 2px solid #0C447C; }
+                        .logo-header { height: 80px; margin-bottom: 0.5cm; }
+                        .titulo-principal { font-size: 18px; font-weight: bold; color: #0C447C; margin-bottom: 0.3cm; }
+                        .subtitulo { font-size: 12px; color: #5f5e5a; margin-bottom: 0.2cm; }
+                        .fecha-impresion { font-size: 11px; color: #888780; margin-top: 0.3cm; }
+                        .seccion-datos { margin-bottom: 1cm; }
+                        .fila-datos { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5cm; margin-bottom: 0.5cm; }
+                        .campo-datos { }
+                        .etiqueta-campo { font-size: 10px; font-weight: bold; color: #0C447C; margin-bottom: 0.2cm; }
+                        .valor-campo { font-size: 11px; border-bottom: 1px solid #000; padding: 0.2cm 0; min-height: 0.4cm; }
+                        .tabla { width: 100%; border-collapse: collapse; margin-top: 1cm; font-size: 10px; }
+                        .tabla th { background: #D3D1C7; border: 1px solid #000; padding: 0.4cm; text-align: left; font-weight: bold; }
+                        .tabla td { border: 1px solid #000; padding: 0.4cm; text-align: left; }
+                        .tabla tbody tr { height: 1.2cm; }
+                        .tabla tbody tr:nth-child(odd) { background: #f9f8f6; }
+                        .footer { margin-top: 1cm; text-align: right; font-size: 10px; }
+                        .codigo-fad { font-weight: bold; color: #0C447C; }
+                        .linea-firma { margin-top: 1.5cm; display: flex; justify-content: space-around; }
+                        .firma { width: 3cm; text-align: center; border-top: 1px solid #000; padding-top: 0.5cm; font-size: 9px; }
+                        @media print {
+                            body { margin: 0; padding: 0.5cm; }
+                            .contenedor { max-width: 100%; }
+                        }
                     </style>
                 </head>
                 <body>
-                    <h2>Control de Reactivos y Consumibles</h2>
-                    <p><strong>Servicio de Hematología - Hospital Universitario "Dr. José Eleuterio González"</strong></p>
-                    <p>Fecha de impresión: ${new Date().toLocaleString('es-MX')}</p>
-                    ${contenido}
+                    <div class="contenedor">
+                        <div class="header">
+                            <img src="https://raw.githubusercontent.com/yairchaveze/control-de-reactivo-hemato-hu/main/inicio-logo01.png" alt="Logo" class="logo-header">
+                            <div class="titulo-principal">CONTROL DE REACTIVOS Y CONSUMIBLES</div>
+                            <div class="subtitulo">Servicio de Hematología</div>
+                            <div class="subtitulo">Hospital Universitario "Dr. José Eleuterio González"</div>
+                            <div class="fecha-impresion">Fecha de impresión: ${fechaImpresion} ${horaImpresion}</div>
+                        </div>
+
+                        <div class="seccion-datos">
+                            <div class="fila-datos">
+                                <div class="campo-datos">
+                                    <div class="etiqueta-campo">IDENTIFICACIÓN DEL PRODUCTO:</div>
+                                    <div class="valor-campo" id="campo-producto">ESPECTRA OPTIA IDL</div>
+                                </div>
+                                <div class="campo-datos">
+                                    <div class="etiqueta-campo">NOMBRE DEL FABRICANTE:</div>
+                                    <div class="valor-campo" id="campo-fabricante">TERUMO BCT</div>
+                                </div>
+                                <div class="campo-datos">
+                                    <div class="etiqueta-campo">DOC. EXTERNO:</div>
+                                    <div class="valor-campo" id="campo-doc">DMT-68</div>
+                                </div>
+                            </div>
+                            <div class="fila-datos">
+                                <div class="campo-datos">
+                                    <div class="etiqueta-campo">PROC. DE EXAMEN:</div>
+                                    <div class="valor-campo" id="campo-procedimiento">MMT-02</div>
+                                </div>
+                                <div class="campo-datos">
+                                    <div class="etiqueta-campo">T° ALMACENAJE:</div>
+                                    <div class="valor-campo" id="campo-temperatura">15-30°C</div>
+                                </div>
+                                <div class="campo-datos">
+                                    <div class="etiqueta-campo"></div>
+                                    <div class="valor-campo"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <table class="tabla">
+                            <thead>
+                                <tr>
+                                    <th>FECHA DE RECEPCIÓN</th>
+                                    <th>No. DE LOTE</th>
+                                    <th>FECHA DE CADUCIDAD</th>
+                                    <th>T° RECEPCIÓN</th>
+                                    <th>REVISIÓN DEL INSERTO</th>
+                                    <th>FAD-10</th>
+                                    <th>FECHA PUESTA EN USO</th>
+                                    <th>VERIFICACIÓN DEL DESEMPEÑO</th>
+                                    <th>FECHA DE BAJA</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-impresion">
+                            </tbody>
+                        </table>
+
+                        <div class="linea-firma">
+                            <div class="firma">Responsable</div>
+                            <div class="firma">Coordinador</div>
+                        </div>
+
+                        <div class="footer">
+                            <div class="codigo-fad">FAD-25-04</div>
+                        </div>
+                    </div>
+
+                    <script>
+                        // Llenar tabla con datos actuales
+                        const tbody = document.getElementById('tbody-impresion');
+                        const reactivosData = ${JSON.stringify(reactivos)};
+                        
+                        reactivosData.forEach(r => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = \`
+                                <td>\${r.entrada.fecha || ''}</td>
+                                <td>\${r.lote}</td>
+                                <td>\${r.fechaCaducidad || ''}</td>
+                                <td>\${r.entrada.temp || ''}</td>
+                                <td>\${r.entrada.revision || ''}</td>
+                                <td>\${r.entrada.fad10 || ''}</td>
+                                <td>\${r.uso.fecha || ''}</td>
+                                <td>\${r.uso.verificacion || ''}</td>
+                                <td>\${r.baja.fecha || ''}</td>
+                            \`;
+                            tbody.appendChild(tr);
+                        });
+                        
+                        // Autoprint después de cargar
+                        window.onload = function() {
+                            window.print();
+                        };
+                    </script>
                 </body>
                 </html>
-            `);
+            `;
+            
+            const ventana = window.open('', '', 'width=1200,height=800');
+            ventana.document.write(html);
             ventana.document.close();
-            ventana.print();
         });
 
         // ===== INICIAR =====
