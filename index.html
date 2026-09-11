@@ -440,7 +440,6 @@
             <h2>Modo de operación</h2>
             <div class="botones">
                 <button class="btn activo" id="btnEntrada">📥 Entrada</button>
-                <button class="btn" id="btnUso">⚙️ Uso</button>
                 <button class="btn" id="btnBaja">🗑️ Baja</button>
             </div>
         </div>
@@ -488,7 +487,7 @@
                             <th>Entrada</th>
                             <th>Caducidad</th>
                             <th>T° Recepción</th>
-                            <th>Uso</th>
+                            <th>Verificación</th>
                             <th>Baja</th>
                             <th>Editar</th>
                         </tr>
@@ -544,6 +543,24 @@
             <div class="modal-botones">
                 <button id="btnDesbloquear" class="btn-desbloquear">Desbloquear</button>
                 <button id="btnCancelarPassword" class="btn-cancelar">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modalSeleccionarVerificacion">
+        <div class="modal-contenido">
+            <h3>📋 Tipo de verificación</h3>
+            <p>¿Qué tipo de verificación realizas al dar de baja?</p>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.5rem;">
+                <button type="button" class="btn-desbloquear" onclick="procesarBaja('Visual OK')" style="background:#185FA5;padding:12px;border:none;border-radius:6px;color:white;cursor:pointer;font-weight:500;transition:background 0.2s;" onmouseover="this.style.background='#0C447C'" onmouseout="this.style.background='#185FA5'">
+                    👁️ Visual OK
+                </button>
+                <button type="button" class="btn-desbloquear" onclick="procesarBaja('Por desempeño (control de reactivo)')" style="background:#185FA5;padding:12px;border:none;border-radius:6px;color:white;cursor:pointer;font-weight:500;transition:background 0.2s;" onmouseover="this.style.background='#0C447C'" onmouseout="this.style.background='#185FA5'">
+                    🔬 Por desempeño (control de reactivo)
+                </button>
+            </div>
+            <div class="modal-botones">
+                <button type="button" class="btn-cancelar" id="btnCancelarVerificacion" style="width: 100%;">Cancelar</button>
             </div>
         </div>
     </div>
@@ -605,6 +622,7 @@
         let reactivos = [];
         let passwordModalData = null;
         let nuevoLoteModal = null;
+        let reactivoPendienteBaja = null;
 
         function cargarDatos() {
             const guardados = localStorage.getItem('reactivos_lab');
@@ -642,7 +660,6 @@
             
             reactivos.forEach(r => {
                 const tr = document.createElement('tr');
-                const usoEstado = r.uso.completado ? '<span class="estado-vigente">✅</span>' : '<span class="estado-pendiente">⏳</span>';
                 const bajaEstado = r.baja.completado ? '<span class="estado-vigente">✅</span>' : '<span class="estado-pendiente">⏳</span>';
                 
                 tr.innerHTML = `
@@ -651,7 +668,7 @@
                     <td><strong>${r.entrada.fecha || ''}</strong></td>
                     <td>${r.fechaCaducidad || '<span style="color:red">⚠️ Falta</span>'}</td>
                     <td>${r.tempRecepcion || r.entrada.temp || '-'}</td>
-                    <td>${usoEstado} ${r.uso.fecha || ''}</td>
+                    <td>${r.baja.verificacion || '-'}</td>
                     <td>${bajaEstado} ${r.baja.fecha || ''}</td>
                     <td><button class="btn-editar" onclick="editarReactivoConCheck('${r.id}')">✏️</button></td>
                 `;
@@ -661,15 +678,13 @@
 
         function cambiarModo(nuevoModo) {
             modo = nuevoModo;
-            document.querySelectorAll('#btnEntrada, #btnUso, #btnBaja').forEach(b => b.classList.remove('activo'));
+            document.querySelectorAll('#btnEntrada, #btnBaja').forEach(b => b.classList.remove('activo'));
             if (nuevoModo === 'entrada') document.getElementById('btnEntrada').classList.add('activo');
-            else if (nuevoModo === 'uso') document.getElementById('btnUso').classList.add('activo');
             else if (nuevoModo === 'baja') document.getElementById('btnBaja').classList.add('activo');
             document.getElementById('codigoInput').focus();
         }
 
         document.getElementById('btnEntrada').addEventListener('click', () => cambiarModo('entrada'));
-        document.getElementById('btnUso').addEventListener('click', () => cambiarModo('uso'));
         document.getElementById('btnBaja').addEventListener('click', () => cambiarModo('baja'));
 
         document.getElementById('codigoInput').addEventListener('keypress', (e) => {
@@ -723,21 +738,34 @@
         }
 
         function abrirFormulario(reactivo) {
-            let cambios = {};
-            if (modo === 'uso') {
-                const verificacion = prompt('Verificación del desempeño (Ej: VISUAL OK):', reactivo.uso.verificacion || '');
-                if (verificacion === null) return;
-                cambios.verificacion = verificacion;
-            } else if (modo === 'baja') {
-                const confirmacion = confirm('¿Confirmar baja de ' + reactivo.lote + ' (pieza ' + reactivo.numeroPieza + '/' + reactivo.numeroPiezasTotal + ')?');
-                if (!confirmacion) return;
+            if (modo === 'baja') {
+                reactivoPendienteBaja = reactivo;
+                document.getElementById('modalSeleccionarVerificacion').classList.add('activo');
             }
-            actualizarReactivo(reactivo.id, modo, Object.assign({
+        }
+        
+        function procesarBaja(tipoVerificacion) {
+            if (!reactivoPendienteBaja) return;
+            
+            document.getElementById('modalSeleccionarVerificacion').classList.remove('activo');
+            
+            const confirmacion = confirm('¿Confirmar baja de ' + reactivoPendienteBaja.lote + ' (pieza ' + reactivoPendienteBaja.numeroPieza + '/' + reactivoPendienteBaja.numeroPiezasTotal + ')?\n\nVerificación: ' + tipoVerificacion);
+            if (!confirmacion) {
+                reactivoPendienteBaja = null;
+                return;
+            }
+            
+            actualizarReactivo(reactivoPendienteBaja.id, 'baja', {
                 completado: true,
                 bloqueado: true,
-                fecha: new Date().toLocaleDateString('es-MX')
-            }, cambios));
-            alert('✅ ' + modo.charAt(0).toUpperCase() + modo.slice(1) + ' registrada exitosamente');
+                fecha: new Date().toLocaleDateString('es-MX'),
+                verificacion: tipoVerificacion
+            });
+            
+            alert('✅ Reactivo dado de baja correctamente');
+            reactivoPendienteBaja = null;
+            document.getElementById('codigoInput').value = '';
+            document.getElementById('codigoInput').focus();
         }
 
         function actualizarReactivo(id, m, datos) {
@@ -767,9 +795,8 @@
                     fechaCaducidad: form.get('fechaCaducidad'),
                     numeroPieza: i,
                     numeroPiezasTotal: numeroPiezas,
-                    entrada: { completado: false, bloqueado: false, fecha: new Date().toLocaleDateString('es-MX'), temp: form.get('tempRecepcion') || '', revision: null, fad10: null },
-                    uso: { completado: false, bloqueado: false, fecha: null, verificacion: null },
-                    baja: { completado: false, bloqueado: false, fecha: null }
+                    entrada: { completado: true, bloqueado: true, fecha: new Date().toLocaleDateString('es-MX'), temp: form.get('tempRecepcion') || '', revision: null, fad10: null },
+                    baja: { completado: false, bloqueado: false, fecha: null, verificacion: null }
                 };
                 reactivos.push(nuevoReactivo);
             }
@@ -816,14 +843,10 @@
             const reactivo = reactivos.find(r => r.id === id);
             if (!reactivo) return;
             
-            // Si está bloqueado, pedir contraseña
-            if (reactivo.entrada.bloqueado) {
-                passwordModalData = { reactivo: reactivo, modo: 'edicion' };
-                document.getElementById('modalPassword').classList.add('activo');
-                document.getElementById('inputPassword').focus();
-            } else {
-                abrirModalEdicion(id);
-            }
+            // Entrada está siempre bloqueada, así que siempre pedir contraseña
+            passwordModalData = { reactivo: reactivo, modo: 'edicion' };
+            document.getElementById('modalPassword').classList.add('activo');
+            document.getElementById('inputPassword').focus();
         }
         
         function abrirModalEdicion(id) {
@@ -889,6 +912,12 @@
             document.getElementById('modalSeleccionarPieza').classList.add('activo');
         }
 
+        document.getElementById('btnCancelarVerificacion').addEventListener('click', () => {
+            document.getElementById('modalSeleccionarVerificacion').classList.remove('activo');
+            reactivoPendienteBaja = null;
+            document.getElementById('codigoInput').focus();
+        });
+
         document.getElementById('btnCancelarSeleccionPieza').addEventListener('click', () => {
             document.getElementById('modalSeleccionarPieza').classList.remove('activo');
             document.getElementById('codigoInput').focus();
@@ -927,9 +956,9 @@
         }
 
         document.getElementById('btnExportar').addEventListener('click', () => {
-            let csv = 'FECHA RECEPCIÓN,No. DE LOTE,FECHA CADUCIDAD,T° RECEPCIÓN,REVISIÓN INSERTO,FAD-10,FECHA PUESTA EN USO,VERIFICACIÓN DESEMPEÑO,FECHA BAJA,PIEZA\n';
+            let csv = 'FECHA RECEPCIÓN,No. DE LOTE,FECHA CADUCIDAD,T° RECEPCIÓN,REVISIÓN INSERTO,FAD-10,VERIFICACIÓN,FECHA BAJA\n';
             reactivos.forEach(r => {
-                csv += '"' + (r.entrada.fecha || '') + '","' + r.lote + '","' + (r.fechaCaducidad || '') + '","' + (r.entrada.temp || '') + '","' + (r.entrada.revision || '') + '","' + (r.entrada.fad10 || '') + '","' + (r.uso.fecha || '') + '","' + (r.uso.verificacion || '') + '","' + (r.baja.fecha || '') + '","' + r.numeroPieza + '/' + r.numeroPiezasTotal + '"\n';
+                csv += '"' + (r.entrada.fecha || '') + '","' + r.lote + '","' + (r.fechaCaducidad || '') + '","' + (r.entrada.temp || '') + '","' + (r.entrada.revision || '') + '","' + (r.entrada.fad10 || '') + '","' + (r.baja.verificacion || '') + '","' + (r.baja.fecha || '') + '"\n';
             });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
@@ -975,7 +1004,7 @@
             
             html += '<table>';
             html += '<thead><tr>';
-            html += '<th>FECHA RECEPCIÓN</th><th>No. LOTE</th><th>FECHA CADUCIDAD</th><th>T° RECEPCIÓN</th><th>REVISIÓN</th><th>FAD-10</th><th>FECHA USO</th><th>VERIFICACIÓN</th><th>FECHA BAJA</th>';
+            html += '<th>FECHA RECEPCIÓN</th><th>No. LOTE</th><th>FECHA CADUCIDAD</th><th>T° RECEPCIÓN</th><th>REVISIÓN</th><th>FAD-10</th><th>VERIFICACIÓN</th><th>FECHA BAJA</th>';
             html += '</tr></thead><tbody>';
             
             reactivos.forEach(r => {
@@ -986,8 +1015,7 @@
                 html += '<td>' + (r.tempRecepcion || r.entrada.temp || '') + '</td>';
                 html += '<td>' + (r.entrada.revision || '') + '</td>';
                 html += '<td>' + (r.entrada.fad10 || '') + '</td>';
-                html += '<td>' + (r.uso.fecha || '') + '</td>';
-                html += '<td>' + (r.uso.verificacion || '') + '</td>';
+                html += '<td>' + (r.baja.verificacion || '') + '</td>';
                 html += '<td>' + (r.baja.fecha || '') + '</td>';
                 html += '</tr>';
             });
