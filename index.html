@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Reactivos - Hospital Universitario "Dr. José Eleuterio González"</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f5;
+            color: #2c2c2a;
+        }
+        
+        .header {
+            background: white;
+            border-bottom: 1px solid #d3d1c7;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .header h1 {
+            font-size: 22px;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            font-size: 13px;
+            color: #5f5e5a;
+        }
+        
+        .container {
+            padding: 1.5rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .seccion {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #d3d1c7;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .seccion h2 {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            color: #2c2c2a;
+        }
+        
+        .botones {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 16px;
+            border: 1px solid #888780;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .btn:hover {
+            background: #f1efe8;
+        }
+        
+        .btn.activo {
+            background: #0C447C;
+            color: white;
+            border-color: #0C447C;
+        }
+        
+        .entrada-lote {
+            background: #f1efe8;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .entrada-lote label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .entrada-lote input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #888780;
+            border-radius: 6px;
+            font-family: inherit;
+        }
+        
+        .entrada-lote input:focus {
+            outline: none;
+            border-color: #0C447C;
+            box-shadow: 0 0 0 3px rgba(12, 68, 124, 0.1);
+        }
+        
+        .metricas {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .metrica {
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #d3d1c7;
+        }
+        
+        .metrica-vigentes {
+            background: #eaf3de;
+            border-color: #c0dd97;
+        }
+        
+        .metrica-baja {
+            background: #fcebeb;
+            border-color: #f7c1c1;
+        }
+        
+        .metrica-label {
+            font-size: 13px;
+            color: #5f5e5a;
+            margin-bottom: 8px;
+        }
+        
+        .metrica-numero {
+            font-size: 32px;
+            font-weight: 500;
+        }
+        
+        .botones-acciones {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn-excel {
+            background: #639922;
+            color: white;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        
+        .btn-excel:hover {
+            background: #4a7016;
+        }
+        
+        .btn-limpiar {
+            background: #A32D2D;
+            color: white;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        
+        .btn-limpiar:hover {
+            background: #791F1F;
+        }
+        
+        .tabla-contenedor {
+            overflow-x: auto;
+            border: 1px solid #d3d1c7;
+            border-radius: 8px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        
+        thead tr {
+            background: #d3d1c7;
+            border-bottom: 1px solid #b4b2a9;
+        }
+        
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 500;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #d3d1c7;
+        }
+        
+        tbody tr:hover {
+            background: #f9f8f6;
+        }
+        
+        .estado-vigente {
+            color: #0F6E56;
+            font-weight: 500;
+        }
+        
+        .estado-pendiente {
+            color: #5F5E5A;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+        
+        .modal.activo {
+            display: flex;
+        }
+        
+        .modal-contenido {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            min-width: 400px;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-contenido h3 {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+        
+        .modal-contenido p {
+            font-size: 14px;
+            color: #5f5e5a;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+        
+        .modal-contenido input,
+        .modal-contenido textarea {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #888780;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        
+        .modal-contenido input:focus,
+        .modal-contenido textarea:focus {
+            outline: none;
+            border-color: #0C447C;
+            box-shadow: 0 0 0 3px rgba(12, 68, 124, 0.1);
+        }
+        
+        .modal-botones {
+            display: flex;
+            gap: 8px;
+            margin-top: 1.5rem;
+        }
+        
+        .modal-botones button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        
+        .btn-crear {
+            background: #639922;
+            color: white;
+        }
+        
+        .btn-crear:hover {
+            background: #4a7016;
+        }
+        
+        .btn-desbloquear {
+            background: #185FA5;
+            color: white;
+        }
+        
+        .btn-desbloquear:hover {
+            background: #0C447C;
+        }
+        
+        .btn-cancelar {
+            background: #d3d1c7;
+            color: #2c2c2a;
+        }
+        
+        .btn-cancelar:hover {
+            background: #b4b2a9;
+        }
+        
+        .oculto {
+            display: none;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 2rem 1.5rem;
+            color: #5f5e5a;
+            font-size: 13px;
+        }
+        
+        .footer a {
+            color: #0C447C;
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏥 Control de Reactivos y Consumibles</h1>
+        <p>Servicio de Hematología - Hospital Universitario "Dr. José Eleuterio González"</p>
+    </div>
+
+    <div class="container">
+        <div class="seccion">
+            <h2>Modo de operación</h2>
+            <div class="botones">
+                <button class="btn activo" id="btnEntrada">📥 Entrada</button>
+                <button class="btn" id="btnUso">⚙️ Uso</button>
+                <button class="btn" id="btnBaja">🗑️ Baja</button>
+            </div>
+        </div>
+
+        <div class="seccion">
+            <h2>Escanear o ingresar código</h2>
+            <div class="entrada-lote">
+                <label for="codigoInput">Código de lote (escanea o escribe):</label>
+                <input type="text" id="codigoInput" placeholder="Ej: 2509043241" autofocus>
+            </div>
+        </div>
+
+        <div class="seccion">
+            <div class="metricas">
+                <div class="metrica metrica-vigentes">
+                    <div class="metrica-label">Reactivos vigentes</div>
+                    <div class="metrica-numero" id="conteoVigentes">0</div>
+                </div>
+                <div class="metrica metrica-baja">
+                    <div class="metrica-label">Dados de baja</div>
+                    <div class="metrica-numero" id="conteoBaja">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="seccion">
+            <h2>Acciones</h2>
+            <div class="botones-acciones">
+                <button class="btn-excel" id="btnExportar">📊 Exportar a Excel</button>
+                <button class="btn-limpiar" id="btnLimpiar">🗑️ Limpiar datos</button>
+            </div>
+        </div>
+
+        <div class="seccion">
+            <h2>Inventario de reactivos</h2>
+            <div class="tabla-contenedor">
+                <table id="tablaReactivos">
+                    <thead>
+                        <tr>
+                            <th>Lote</th>
+                            <th>Producto</th>
+                            <th>Fabricante</th>
+                            <th>Entrada</th>
+                            <th>Uso</th>
+                            <th>Baja</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cuerpoTabla">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modalNuevo">
+        <div class="modal-contenido">
+            <h3>Registrar nuevo reactivo</h3>
+            <p>Completa los datos del reactivo que ingresa al laboratorio:</p>
+            <form id="formNuevo">
+                <input type="text" name="producto" placeholder="Producto" required>
+                <input type="text" name="fabricante" placeholder="Fabricante" required>
+                <input type="text" name="procedimiento" placeholder="Procedimiento de examen">
+                <input type="text" name="tempAlmacenaje" placeholder="Temperatura almacenaje (Ej: 15-30°C)">
+                <input type="text" name="docExterno" placeholder="Documento externo">
+                <div class="modal-botones">
+                    <button type="submit" class="btn-crear">Crear</button>
+                    <button type="button" class="btn-cancelar" id="btnCancelarNuevo">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="modalPassword">
+        <div class="modal-contenido">
+            <h3>🔐 Desbloquear registro</h3>
+            <p>Este registro está bloqueado. Ingresa la contraseña para modificar los datos.</p>
+            <input type="password" id="inputPassword" placeholder="Contraseña de auditoría">
+            <div class="modal-botones">
+                <button id="btnDesbloquear" class="btn-desbloquear">Desbloquear</button>
+                <button id="btnCancelarPassword" class="btn-cancelar">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Control de Reactivos v1.0 | Datos almacenados localmente en tu navegador</p>
+        <p><a href="https://github.com/yairchaveze/control-de-reactivo-hemato-hu" target="_blank">Ver código en GitHub</a></p>
+    </div>
+
+    <script>
+        const CONTRASEÑA = 'hemato2026';
+        let modo = 'entrada';
+        let reactivos = [];
+        let passwordModalData = null;
+        let nuevoLoteModal = null;
+
+        // ===== FUNCIONES DE ALMACENAMIENTO =====
+        function cargarDatos() {
+            const guardados = localStorage.getItem('reactivos_lab');
+            if (guardados) {
+                try {
+                    reactivos = JSON.parse(guardados);
+                } catch (e) {
+                    console.error('Error cargando datos:', e);
+                    reactivos = [];
+                }
+            }
+            actualizarTabla();
+        }
+
+        function guardarDatos() {
+            localStorage.setItem('reactivos_lab', JSON.stringify(reactivos));
+        }
+
+        // ===== FUNCIONES DE UI =====
+        function actualizarTabla() {
+            const tbody = document.getElementById('cuerpoTabla');
+            tbody.innerHTML = '';
+            
+            const vigentes = reactivos.filter(r => !r.baja.completado);
+            const baja = reactivos.filter(r => r.baja.completado);
+            
+            document.getElementById('conteoVigentes').textContent = vigentes.length;
+            document.getElementById('conteoBaja').textContent = baja.length;
+            
+            if (reactivos.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td colspan="6" style="text-align: center; color: #5f5e5a; padding: 2rem;">Sin reactivos registrados</td>';
+                tbody.appendChild(tr);
+                return;
+            }
+            
+            reactivos.forEach(r => {
+                const tr = document.createElement('tr');
+                const entradaEstado = r.entrada.completado ? '<span class="estado-vigente">✅</span>' : '<span class="estado-pendiente">⏳</span>';
+                const usoEstado = r.uso.completado ? '<span class="estado-vigente">✅</span>' : '<span class="estado-pendiente">⏳</span>';
+                const bajaEstado = r.baja.completado ? '<span class="estado-vigente">✅</span>' : '<span class="estado-pendiente">⏳</span>';
+                
+                tr.innerHTML = `
+                    <td><strong>${r.lote}</strong></td>
+                    <td>${r.producto}</td>
+                    <td>${r.fabricante}</td>
+                    <td>${entradaEstado} ${r.entrada.fecha || ''}</td>
+                    <td>${usoEstado} ${r.uso.fecha || ''}</td>
+                    <td>${bajaEstado} ${r.baja.fecha || ''}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ===== MANEJO DE MODOS =====
+        function cambiarModo(nuevoModo) {
+            modo = nuevoModo;
+            document.querySelectorAll('#btnEntrada, #btnUso, #btnBaja').forEach(b => b.classList.remove('activo'));
+            
+            if (nuevoModo === 'entrada') document.getElementById('btnEntrada').classList.add('activo');
+            else if (nuevoModo === 'uso') document.getElementById('btnUso').classList.add('activo');
+            else if (nuevoModo === 'baja') document.getElementById('btnBaja').classList.add('activo');
+            
+            document.getElementById('codigoInput').focus();
+        }
+
+        document.getElementById('btnEntrada').addEventListener('click', () => cambiarModo('entrada'));
+        document.getElementById('btnUso').addEventListener('click', () => cambiarModo('uso'));
+        document.getElementById('btnBaja').addEventListener('click', () => cambiarModo('baja'));
+
+        // ===== ESCANEO =====
+        document.getElementById('codigoInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') manejarEscaneo();
+        });
+
+        function manejarEscaneo() {
+            const codigo = document.getElementById('codigoInput').value.trim();
+            if (!codigo) return;
+            
+            const existente = reactivos.find(r => r.lote === codigo);
+            
+            if (!existente) {
+                nuevoLoteModal = codigo;
+                document.getElementById('modalNuevo').classList.add('activo');
+                document.querySelector('#formNuevo input[name="producto"]').focus();
+            } else if (existente[modo].bloqueado) {
+                passwordModalData = { reactivo: existente, modo };
+                document.getElementById('modalPassword').classList.add('activo');
+                document.getElementById('inputPassword').focus();
+            } else if (modo === 'baja' || (modo === 'entrada' && !existente.entrada.completado) || (modo === 'uso' && existente.entrada.completado)) {
+                abrirFormulario(existente);
+            } else {
+                alert('Este reactivo ya fue completado en este estado.');
+            }
+            
+            document.getElementById('codigoInput').value = '';
+        }
+
+        function abrirFormulario(reactivo) {
+            let cambios = {};
+            
+            if (modo === 'entrada') {
+                const temp = prompt('Temperatura de recepción (Ej: 23°C):', reactivo.entrada.temp || '23°C');
+                if (temp === null) return;
+                cambios.temp = temp;
+                
+                const revision = prompt('Revisión del inserto:', reactivo.entrada.revision || '');
+                if (revision === null) return;
+                cambios.revision = revision;
+                
+                const fad10 = prompt('FAD-10:', reactivo.entrada.fad10 || '');
+                if (fad10 === null) return;
+                cambios.fad10 = fad10;
+            } else if (modo === 'uso') {
+                const verificacion = prompt('Verificación del desempeño (Ej: VISUAL OK):', reactivo.uso.verificacion || '');
+                if (verificacion === null) return;
+                cambios.verificacion = verificacion;
+            } else if (modo === 'baja') {
+                const confirmacion = confirm(`¿Confirmar baja de ${reactivo.lote}?`);
+                if (!confirmacion) return;
+            }
+            
+            actualizarReactivo(reactivo.lote, modo, {
+                completado: true,
+                bloqueado: true,
+                fecha: new Date().toLocaleDateString('es-MX'),
+                ...cambios
+            });
+            
+            alert(`✅ ${modo.charAt(0).toUpperCase() + modo.slice(1)} registrada exitosamente`);
+        }
+
+        function actualizarReactivo(lote, m, datos) {
+            const r = reactivos.find(re => re.lote === lote);
+            if (r) {
+                r[m] = { ...r[m], ...datos };
+                guardarDatos();
+                actualizarTabla();
+            }
+        }
+
+        // ===== MODAL NUEVO REACTIVO =====
+        document.getElementById('formNuevo').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const form = new FormData(e.target);
+            
+            const nuevoReactivo = {
+                lote: nuevoLoteModal,
+                producto: form.get('producto'),
+                fabricante: form.get('fabricante'),
+                procedimiento: form.get('procedimiento') || '',
+                tempAlmacenaje: form.get('tempAlmacenaje') || '',
+                docExterno: form.get('docExterno') || '',
+                entrada: { completado: false, bloqueado: false, fecha: null, temp: null, revision: null, fad10: null },
+                uso: { completado: false, bloqueado: false, fecha: null, verificacion: null },
+                baja: { completado: false, bloqueado: false, fecha: null }
+            };
+            
+            reactivos.push(nuevoReactivo);
+            guardarDatos();
+            actualizarTabla();
+            document.getElementById('modalNuevo').classList.remove('activo');
+            e.target.reset();
+            
+            // Continuar con el proceso de entrada
+            abrirFormulario(nuevoReactivo);
+        });
+
+        document.getElementById('btnCancelarNuevo').addEventListener('click', () => {
+            document.getElementById('modalNuevo').classList.remove('activo');
+        });
+
+        // ===== MODAL PASSWORD =====
+        document.getElementById('btnDesbloquear').addEventListener('click', () => {
+            const pwd = document.getElementById('inputPassword').value;
+            if (pwd === CONTRASEÑA) {
+                document.getElementById('modalPassword').classList.remove('activo');
+                abrirFormulario(passwordModalData.reactivo);
+            } else {
+                alert('❌ Contraseña incorrecta');
+                document.getElementById('inputPassword').value = '';
+                document.getElementById('inputPassword').focus();
+            }
+        });
+
+        document.getElementById('inputPassword').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('btnDesbloquear').click();
+        });
+
+        document.getElementById('btnCancelarPassword').addEventListener('click', () => {
+            document.getElementById('modalPassword').classList.remove('activo');
+            document.getElementById('inputPassword').value = '';
+        });
+
+        // ===== EXPORTAR EXCEL =====
+        document.getElementById('btnExportar').addEventListener('click', () => {
+            let csv = 'FECHA RECEPCIÓN,No. DE LOTE,FECHA CADUCIDAD,T° RECEPCIÓN,REVISIÓN INSERTO,FAD-10,FECHA PUESTA EN USO,VERIFICACIÓN DESEMPEÑO,FECHA BAJA\n';
+            
+            reactivos.forEach(r => {
+                csv += `"${r.entrada.fecha || ''}","${r.lote}","","${r.entrada.temp || ''}","${r.entrada.revision || ''}","${r.entrada.fad10 || ''}","${r.uso.fecha || ''}","${r.uso.verificacion || ''}","${r.baja.fecha || ''}"\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `Control_Reactivos_${new Date().toLocaleDateString('es-MX').replace(/\//g, '-')}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        // ===== LIMPIAR DATOS =====
+        document.getElementById('btnLimpiar').addEventListener('click', () => {
+            if (confirm('⚠️ ¿Estás seguro? Esto eliminará TODOS los datos del inventario.')) {
+                if (confirm('Esta acción no se puede deshacer. ¿Confirmas?')) {
+                    reactivos = [];
+                    guardarDatos();
+                    actualizarTabla();
+                    alert('Datos eliminados');
+                }
+            }
+        });
+
+        // ===== INICIAR =====
+        cargarDatos();
+        document.getElementById('codigoInput').focus();
+    </script>
+</body>
+</html>
