@@ -255,6 +255,36 @@
             background: #0C447C;
         }
         
+        .pestanas-container {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-pestana {
+            padding: 8px 12px;
+            border: 2px solid #d3d1c7;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
+            color: #5f5e5a;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .btn-pestana:hover {
+            background: #f1efe8;
+            border-color: #888780;
+        }
+        
+        .btn-pestana.activa {
+            background: #0C447C;
+            color: white;
+            border-color: #0C447C;
+        }
+        
         .modal {
             position: fixed;
             top: 0;
@@ -478,6 +508,13 @@
 
         <div class="seccion">
             <h2>Inventario de reactivos</h2>
+            
+            <div id="pestanasAno" class="pestanas-container" style="margin-bottom: 1rem; border-bottom: 2px solid #d3d1c7; display: flex; gap: 4px; overflow-x: auto; padding-bottom: 0.5rem;">
+            </div>
+            
+            <div id="pestanasProducto" class="pestanas-container" style="margin-bottom: 1rem; border-bottom: 2px solid #d3d1c7; display: flex; gap: 4px; overflow-x: auto; padding-bottom: 0.5rem;">
+            </div>
+            
             <div class="tabla-contenedor">
                 <table id="tablaReactivos">
                     <thead>
@@ -623,6 +660,8 @@
         let passwordModalData = null;
         let nuevoLoteModal = null;
         let reactivoPendienteBaja = null;
+        let anoSeleccionado = null;
+        let productoSeleccionado = null;
 
         function cargarDatos() {
             const guardados = localStorage.getItem('reactivos_lab');
@@ -645,20 +684,71 @@
             const tbody = document.getElementById('cuerpoTabla');
             tbody.innerHTML = '';
             
+            // Obtener años únicos ordenados
+            const anos = [...new Set(reactivos
+                .filter(r => r.entrada.fecha)
+                .map(r => r.entrada.fecha.split('/')[2])
+            )].sort().reverse();
+            
+            // Si no hay años, establecer el primero
+            if (!anoSeleccionado && anos.length > 0) {
+                anoSeleccionado = anos[0];
+            }
+            
+            // Generar pestañas de años
+            const pestanasAnoContainer = document.getElementById('pestanasAno');
+            pestanasAnoContainer.innerHTML = '';
+            anos.forEach(ano => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-pestana' + (ano === anoSeleccionado ? ' activa' : '');
+                btn.textContent = ano;
+                btn.onclick = () => seleccionarAno(ano);
+                pestanasAnoContainer.appendChild(btn);
+            });
+            
+            // Filtrar reactivos por año
+            const reactivosDelAno = reactivos.filter(r => 
+                r.entrada.fecha && r.entrada.fecha.split('/')[2] === anoSeleccionado
+            );
+            
+            // Obtener productos únicos del año
+            const productos = [...new Set(reactivosDelAno.map(r => r.producto))].sort();
+            
+            // Si no hay producto seleccionado, seleccionar el primero
+            if (!productoSeleccionado && productos.length > 0) {
+                productoSeleccionado = productos[0];
+            }
+            
+            // Generar pestañas de productos
+            const pestanasProductoContainer = document.getElementById('pestanasProducto');
+            pestanasProductoContainer.innerHTML = '';
+            productos.forEach(producto => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-pestana' + (producto === productoSeleccionado ? ' activa' : '');
+                btn.textContent = producto;
+                btn.onclick = () => seleccionarProducto(producto);
+                pestanasProductoContainer.appendChild(btn);
+            });
+            
+            // Filtrar reactivos por producto
+            const reactivosDelProducto = reactivosDelAno.filter(r => r.producto === productoSeleccionado);
+            
+            // Actualizar métricas
             const vigentes = reactivos.filter(r => !r.baja.completado);
             const baja = reactivos.filter(r => r.baja.completado);
-            
             document.getElementById('conteoVigentes').textContent = vigentes.length;
             document.getElementById('conteoBaja').textContent = baja.length;
             
-            if (reactivos.length === 0) {
+            // Mostrar tabla vacía
+            if (reactivosDelProducto.length === 0) {
                 const tr = document.createElement('tr');
                 tr.innerHTML = '<td colspan="8" style="text-align: center; color: #5f5e5a; padding: 2rem;">Sin reactivos registrados</td>';
                 tbody.appendChild(tr);
                 return;
             }
             
-            reactivos.forEach(r => {
+            // Llenar tabla
+            reactivosDelProducto.forEach(r => {
                 const tr = document.createElement('tr');
                 const bajaEstado = r.baja.completado ? '<span class="estado-vigente">✅</span>' : '<span class="estado-pendiente">⏳</span>';
                 
@@ -674,6 +764,17 @@
                 `;
                 tbody.appendChild(tr);
             });
+        }
+        
+        function seleccionarAno(ano) {
+            anoSeleccionado = ano;
+            productoSeleccionado = null; // Resetear producto
+            actualizarTabla();
+        }
+        
+        function seleccionarProducto(producto) {
+            productoSeleccionado = producto;
+            actualizarTabla();
         }
 
         function cambiarModo(nuevoModo) {
