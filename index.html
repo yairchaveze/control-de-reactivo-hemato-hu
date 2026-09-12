@@ -620,11 +620,11 @@
 
     <div class="modal" id="modalPassword">
         <div class="modal-contenido">
-            <h3>🔐 Desbloquear registro</h3>
-            <p>Este registro está bloqueado. Ingresa la contraseña para modificar los datos.</p>
-            <input type="password" id="inputPassword" placeholder="Contraseña de auditoría">
+            <h3>🔐 Confirmar identidad</h3>
+            <p>Ingresa tu contraseña para confirmar esta acción.</p>
+            <input type="password" id="inputPasswordEdicion" placeholder="Tu contraseña">
             <div class="modal-botones">
-                <button id="btnDesbloquear" class="btn-desbloquear">Desbloquear</button>
+                <button id="btnDesbloquear" class="btn-desbloquear">Confirmar</button>
                 <button id="btnCancelarPassword" class="btn-cancelar">Cancelar</button>
             </div>
         </div>
@@ -725,7 +725,6 @@
             'CHIMM': 'CHIMM1'
         };
         
-        const CONTRASEÑA = 'hemato2026';
         let modo = 'entrada';
         let reactivos = [];
         let passwordModalData = null;
@@ -787,7 +786,8 @@
             localStorage.setItem('usuario_lab', JSON.stringify({
                 usuario: usuario,
                 departamento: departamento,
-                fechaLogin: new Date().toLocaleString('es-MX')
+                fechaLogin: new Date().toLocaleString('es-MX'),
+                contrasena: password
             }));
             
             // Ocultar login y mostrar app
@@ -1097,8 +1097,11 @@
         });
 
         document.getElementById('btnDesbloquear').addEventListener('click', () => {
-            const pwd = document.getElementById('inputPassword').value.trim();
-            if (pwd === CONTRASEÑA) {
+            const pwd = document.getElementById('inputPasswordEdicion').value.trim();
+            const sesion = JSON.parse(localStorage.getItem('usuario_lab') || '{}');
+            const contrasenaCorrecta = sesion.contrasena;
+            
+            if (pwd === contrasenaCorrecta) {
                 document.getElementById('modalPassword').classList.remove('activo');
                 if (passwordModalData.modo === 'edicion') {
                     abrirModalEdicion(passwordModalData.reactivo.id);
@@ -1107,18 +1110,18 @@
                 }
             } else {
                 alert('❌ Contraseña incorrecta');
-                document.getElementById('inputPassword').value = '';
-                document.getElementById('inputPassword').focus();
+                document.getElementById('inputPasswordEdicion').value = '';
+                document.getElementById('inputPasswordEdicion').focus();
             }
         });
 
-        document.getElementById('inputPassword').addEventListener('keypress', (e) => {
+        document.getElementById('inputPasswordEdicion').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') document.getElementById('btnDesbloquear').click();
         });
 
         document.getElementById('btnCancelarPassword').addEventListener('click', () => {
             document.getElementById('modalPassword').classList.remove('activo');
-            document.getElementById('inputPassword').value = '';
+            document.getElementById('inputPasswordEdicion').value = '';
         });
 
         // ===== MODAL EDICIÓN =====
@@ -1131,7 +1134,7 @@
             // Entrada está siempre bloqueada, así que siempre pedir contraseña
             passwordModalData = { reactivo: reactivo, modo: 'edicion' };
             document.getElementById('modalPassword').classList.add('activo');
-            document.getElementById('inputPassword').focus();
+            document.getElementById('inputPasswordEdicion').focus();
         }
         
         function abrirModalEdicion(id) {
@@ -1234,7 +1237,7 @@
                     if (r[modo].bloqueado) {
                         passwordModalData = { reactivo: r, modo };
                         document.getElementById('modalPassword').classList.add('activo');
-                        document.getElementById('inputPassword').focus();
+                        document.getElementById('inputPasswordEdicion').focus();
                     } else {
                         abrirFormulario(r);
                     }
