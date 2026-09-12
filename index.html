@@ -1008,7 +1008,7 @@
 
         function abrirFormulario(reactivo) {
             if (modo === 'uso') {
-                const revision = prompt('Revisión del inserto (Ej: VISUAL OK, OK, VÁLIDO):', reactivo.uso.revision || '');
+                const revision = prompt('Revisión del inserto (versión/documento):', reactivo.uso.revision || '');
                 if (revision === null) return;
                 
                 // Guardar revisión y pedir verificación
