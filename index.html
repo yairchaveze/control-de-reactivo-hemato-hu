@@ -1097,7 +1097,7 @@
         });
 
         document.getElementById('btnDesbloquear').addEventListener('click', () => {
-            const pwd = document.getElementById('inputPassword').value;
+            const pwd = document.getElementById('inputPassword').value.trim();
             if (pwd === CONTRASEÑA) {
                 document.getElementById('modalPassword').classList.remove('activo');
                 if (passwordModalData.modo === 'edicion') {
