@@ -730,7 +730,7 @@
         <p><a href="https://github.com/yairchaveze/control-de-reactivo-hemato-hu" target="_blank">Ver código en GitHub</a></p>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.9.0/dist/quagga.min.js"></script>
+    <script src="https://unpkg.com/@zxing/library@latest"></script>
     <script>
         // ===== USUARIOS PERMITIDOS =====
         const USUARIOS_PERMITIDOS = {
@@ -1052,71 +1052,88 @@
 
         async function iniciarCamara() {
             try {
-                document.getElementById('statusCamara').textContent = '🔄 Inicializando Quagga2...';
+                document.getElementById('statusCamara').textContent = '🔄 Inicializando cámara...';
                 
-                Quagga.init({
-                    inputStream: {
-                        name: "Live",
-                        type: "LiveStream",
-                        target: document.querySelector('#containerCamara'),
-                        constraints: {
-                            facingMode: "environment"
-                        }
-                    },
-                    decoder: {
-                        readers: [
-                            "code_128_reader",
-                            "ean_reader",
-                            "ean_8_reader",
-                            "code_39_reader",
-                            "code_39_vin_reader",
-                            "upc_reader",
-                            "upc_e_reader",
-                            "i2of5_reader",
-                            "2of5_reader",
-                            "codabar_reader",
-                            "qr_reader"
-                        ],
-                        debug: {
-                            showCanvas: false,
-                            showPatternLabel: false,
-                            showFrequency: false,
-                            showErrors: false
-                        }
-                    }
-                }, function(err) {
-                    if (err) {
-                        document.getElementById('statusCamara').textContent = '❌ Error: ' + err.message;
-                        document.getElementById('statusCamara').style.background = 'rgba(220, 53, 69, 0.9)';
-                        return;
-                    }
-                    
-                    Quagga.start();
-                    document.getElementById('statusCamara').textContent = '✅ Cámara activa - Apunta al código de barras';
-                    document.getElementById('statusCamara').style.background = 'rgba(0, 128, 0, 0.7)';
+                const video = document.getElementById('videoCamara');
+                
+                // Obtener acceso a cámara
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment', width: 1280, height: 720 }
                 });
-
-                Quagga.onDetected(function(result) {
-                    if (result && result.codeResult && result.codeResult.code) {
-                        const codigo = result.codeResult.code;
-                        document.getElementById('codigoEscaneado').value = codigo;
-                        document.getElementById('statusCamara').textContent = '✅ Código detectado:\n' + codigo + '\n\nHaz clic en "Confirmar"';
-                        document.getElementById('statusCamara').style.background = 'rgba(40, 167, 69, 0.9)';
-                    }
-                });
-
+                
+                video.srcObject = stream;
+                streamCamara = stream;
+                
+                await video.play();
+                
+                document.getElementById('statusCamara').textContent = '✅ Cámara activa - Apunta al código';
+                document.getElementById('statusCamara').style.background = 'rgba(0, 128, 0, 0.7)';
+                
+                // Esperar un frame para que video esté listo, luego iniciar escaneo
+                setTimeout(() => escanearCodigoZXing(), 500);
+                
             } catch (error) {
-                document.getElementById('statusCamara').textContent = '❌ Error: ' + error.message;
+                document.getElementById('statusCamara').textContent = '❌ Error: ' + error.message + '\n\nPermite acceso a la cámara';
                 document.getElementById('statusCamara').style.background = 'rgba(220, 53, 69, 0.9)';
-                console.error('Error al iniciar Quagga:', error);
+                console.error('Error cámara:', error);
             }
         }
 
         function detenerCamara() {
             try {
-                Quagga.stop();
+                if (streamCamara) {
+                    streamCamara.getTracks().forEach(track => track.stop());
+                    streamCamara = null;
+                }
             } catch(e) {
-                console.log('Quagga no estaba activo');
+                console.log('Error deteniendo cámara:', e);
+            }
+        }
+
+        async function escanearCodigoZXing() {
+            const video = document.getElementById('videoCamara');
+            const canvas = document.getElementById('canvasCodigo');
+            const ctx = canvas.getContext('2d');
+            
+            if (!streamCamara) return; // Si se detuvo, salir
+
+            try {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                
+                if (canvas.width === 0) {
+                    setTimeout(() => escanearCodigoZXing(), 100);
+                    return;
+                }
+
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const luminanceSource = new ZXing.RGBLuminanceSource(imageData.data, canvas.width, canvas.height);
+                const binaryBitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminanceSource));
+                
+                try {
+                    const result = new ZXing.MultiFormatReader().decode(binaryBitmap);
+                    
+                    if (result && result.text) {
+                        document.getElementById('codigoEscaneado').value = result.text;
+                        document.getElementById('statusCamara').textContent = '✅ Código detectado:\n' + result.text + '\n\nHaz clic en "Confirmar"';
+                        document.getElementById('statusCamara').style.background = 'rgba(40, 167, 69, 0.9)';
+                        return;
+                    }
+                } catch (e) {
+                    // Sin código detectado, continuar escaneando
+                }
+                
+                // Continuar escaneando
+                if (streamCamara) {
+                    requestAnimationFrame(escanearCodigoZXing);
+                }
+                
+            } catch (error) {
+                console.error('Error escaneo:', error);
+                if (streamCamara) {
+                    requestAnimationFrame(escanearCodigoZXing);
+                }
             }
         }
 
