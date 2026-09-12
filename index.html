@@ -608,7 +608,10 @@
                 <input type="text" name="tempRecepcion" placeholder="Temperatura de recepción (Ej: 25°C)">
                 <input type="text" name="docExterno" placeholder="Documento externo">
                 <input type="text" name="fad10" placeholder="FAD-10">
-                <input type="date" name="fechaCaducidad" placeholder="Fecha de caducidad" required title="Fecha de caducidad">
+                
+                <label style="font-size:12px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.3rem;">📅 Fecha de caducidad:</label>
+                <input type="date" name="fechaCaducidad" required title="Fecha de caducidad" style="margin-bottom:1rem;">
+                
                 <input type="number" name="numeroPiezas" placeholder="Número de piezas recibidas" min="1" value="1" required>
                 <div class="modal-botones">
                     <button type="submit" class="btn-crear">Crear</button>
@@ -679,9 +682,6 @@
                 
                 <label style="font-size:12px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.3rem;">Temperatura de recepción (Ej: 25°C):</label>
                 <input type="text" id="editTemperatura" style="margin-bottom:1rem;">
-                
-                <label style="font-size:12px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.3rem;">Revisión del inserto:</label>
-                <input type="text" id="editRevision" style="margin-bottom:1rem;">
                 
                 <label style="font-size:12px;color:#5f5e5a;font-weight:500;display:block;margin-bottom:0.3rem;">FAD-10:</label>
                 <input type="text" id="editFAD10" style="margin-bottom:1rem;">
@@ -1146,7 +1146,6 @@
             document.getElementById('editFechaEntrada').value = reactivoEnEdicion.entrada.fecha || '';
             document.getElementById('editFechaCaducidad').value = reactivoEnEdicion.fechaCaducidad || '';
             document.getElementById('editTemperatura').value = reactivoEnEdicion.tempRecepcion || reactivoEnEdicion.entrada.temp || '';
-            document.getElementById('editRevision').value = reactivoEnEdicion.entrada.revision || '';
             document.getElementById('editFAD10').value = reactivoEnEdicion.entrada.fad10 || '';
             document.getElementById('editRevisionUso').value = reactivoEnEdicion.uso.revision || '';
             document.getElementById('editVerificacionUso').value = reactivoEnEdicion.uso.verificacion || '';
@@ -1174,7 +1173,6 @@
             reactivoEnEdicion.fechaCaducidad = document.getElementById('editFechaCaducidad').value;
             reactivoEnEdicion.tempRecepcion = document.getElementById('editTemperatura').value;
             reactivoEnEdicion.entrada.temp = document.getElementById('editTemperatura').value;
-            reactivoEnEdicion.entrada.revision = document.getElementById('editRevision').value;
             reactivoEnEdicion.entrada.fad10 = document.getElementById('editFAD10').value;
             reactivoEnEdicion.uso.revision = document.getElementById('editRevisionUso').value;
             reactivoEnEdicion.uso.verificacion = document.getElementById('editVerificacionUso').value;
