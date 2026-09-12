@@ -632,7 +632,7 @@
                     🔄 Inicializando cámara...
                 </div>
             </div>
-            <input type="text" id="codigoEscaneado" placeholder="Código detectado aparecerá aquí" style="width: 100%; padding: 10px; margin-bottom: 1rem; border: 1px solid #888780; border-radius: 6px;" readonly>
+            <input type="text" id="codigoEscaneado" placeholder="Código detectado aparecerá aquí o escribe manualmente" style="width: 100%; padding: 10px; margin-bottom: 1rem; border: 1px solid #888780; border-radius: 6px;">
             <div class="modal-botones">
                 <button type="button" id="btnConfirmarCodigo" class="btn-desbloquear" style="flex: 1;">✅ Confirmar</button>
                 <button type="button" id="btnCerrarCamara" class="btn-cancelar" style="flex: 1;">Cancelar</button>
@@ -730,7 +730,7 @@
         <p><a href="https://github.com/yairchaveze/control-de-reactivo-hemato-hu" target="_blank">Ver código en GitHub</a></p>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.9.0/dist/quagga.min.js"></script>
     <script>
         // ===== USUARIOS PERMITIDOS =====
         const USUARIOS_PERMITIDOS = {
@@ -1028,7 +1028,6 @@
 
         // ===== FUNCIONES DE CÁMARA =====
         let streamCamara = null;
-        let analizandoCodigo = false;
 
         document.getElementById('btnAbrirCamara').addEventListener('click', async () => {
             document.getElementById('modalCamara').classList.add('activo');
@@ -1053,66 +1052,72 @@
 
         async function iniciarCamara() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment' } 
+                document.getElementById('statusCamara').textContent = '🔄 Inicializando Quagga2...';
+                
+                Quagga.init({
+                    inputStream: {
+                        name: "Live",
+                        type: "LiveStream",
+                        target: document.querySelector('#containerCamara'),
+                        constraints: {
+                            facingMode: "environment"
+                        }
+                    },
+                    decoder: {
+                        readers: [
+                            "code_128_reader",
+                            "ean_reader",
+                            "ean_8_reader",
+                            "code_39_reader",
+                            "code_39_vin_reader",
+                            "upc_reader",
+                            "upc_e_reader",
+                            "i2of5_reader",
+                            "2of5_reader",
+                            "codabar_reader",
+                            "qr_reader"
+                        ],
+                        debug: {
+                            showCanvas: false,
+                            showPatternLabel: false,
+                            showFrequency: false,
+                            showErrors: false
+                        }
+                    }
+                }, function(err) {
+                    if (err) {
+                        document.getElementById('statusCamara').textContent = '❌ Error: ' + err.message;
+                        document.getElementById('statusCamara').style.background = 'rgba(220, 53, 69, 0.9)';
+                        return;
+                    }
+                    
+                    Quagga.start();
+                    document.getElementById('statusCamara').textContent = '✅ Cámara activa - Apunta al código de barras';
+                    document.getElementById('statusCamara').style.background = 'rgba(0, 128, 0, 0.7)';
                 });
-                
-                const video = document.getElementById('videoCamara');
-                video.srcObject = stream;
-                streamCamara = stream;
-                
-                document.getElementById('statusCamara').textContent = '✅ Cámara activa - Apunta al código de barras';
-                document.getElementById('statusCamara').style.background = 'rgba(0, 128, 0, 0.7)';
-                
-                video.play();
-                escanearCodigo();
+
+                Quagga.onDetected(function(result) {
+                    if (result && result.codeResult && result.codeResult.code) {
+                        const codigo = result.codeResult.code;
+                        document.getElementById('codigoEscaneado').value = codigo;
+                        document.getElementById('statusCamara').textContent = '✅ Código detectado:\n' + codigo + '\n\nHaz clic en "Confirmar"';
+                        document.getElementById('statusCamara').style.background = 'rgba(40, 167, 69, 0.9)';
+                    }
+                });
+
             } catch (error) {
-                document.getElementById('statusCamara').textContent = '❌ Error: ' + error.message + '\n\nVerifica permisos de cámara';
+                document.getElementById('statusCamara').textContent = '❌ Error: ' + error.message;
                 document.getElementById('statusCamara').style.background = 'rgba(220, 53, 69, 0.9)';
-                console.error('Error al acceder a la cámara:', error);
+                console.error('Error al iniciar Quagga:', error);
             }
         }
 
         function detenerCamara() {
-            analizandoCodigo = false;
-            if (streamCamara) {
-                streamCamara.getTracks().forEach(track => track.stop());
-                streamCamara = null;
+            try {
+                Quagga.stop();
+            } catch(e) {
+                console.log('Quagga no estaba activo');
             }
-        }
-
-        function escanearCodigo() {
-            const video = document.getElementById('videoCamara');
-            const canvas = document.getElementById('canvasCodigo');
-            const ctx = canvas.getContext('2d');
-            
-            analizandoCodigo = true;
-
-            function analizar() {
-                if (!analizandoCodigo) return;
-
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-
-                if (canvas.width === 0) {
-                    requestAnimationFrame(analizar);
-                    return;
-                }
-
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const code = jsQR(imageData.data, canvas.width, canvas.height);
-
-                if (code) {
-                    document.getElementById('codigoEscaneado').value = code.data;
-                    document.getElementById('statusCamara').textContent = '✅ Código detectado: ' + code.data + '\n\nHaz clic en "Confirmar"';
-                    document.getElementById('statusCamara').style.background = 'rgba(40, 167, 69, 0.9)';
-                } else {
-                    requestAnimationFrame(analizar);
-                }
-            }
-
-            analizar();
         }
 
         function abrirFormulario(reactivo) {
